@@ -1,0 +1,2606 @@
+<!doctype html>
+<html lang="uk">
+<head>
+<meta charset="utf-8">
+
+<meta name="viewport"
+      content="width=device-width,initial-scale=1,viewport-fit=cover">
+
+<meta name="theme-color" content="#06111d">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+
+<title>ПРОФІЛЬ РЕЛЬЄФУ PRO 2.1</title>
+
+<link rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+
+<style>
+:root{
+  --bg:#050b12;
+  --panel:#0a1522;
+  --panel2:#0d1d2d;
+  --line:#17354d;
+  --cyan:#00eaff;
+  --green:#00ff9d;
+  --yellow:#ffe600;
+  --red:#ff496c;
+  --text:#eaf7ff;
+  --muted:#7f9bb0;
+  --shadow:0 0 25px rgba(0,234,255,.10);
+}
+
+*{
+  box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
+}
+
+html,body{
+  margin:0;
+  min-height:100%;
+  background:
+    radial-gradient(circle at 50% -10%,#10314b 0,#07111c 35%,#050b12 75%);
+  color:var(--text);
+  font-family:Inter,Arial,sans-serif;
+}
+
+body{
+  overflow-x:hidden;
+}
+
+button,
+input,
+select{
+  font:inherit;
+}
+
+button{
+  border:1px solid #1d526d;
+  background:linear-gradient(180deg,#10283a,#091722);
+  color:#eaffff;
+  border-radius:12px;
+  padding:11px 13px;
+  cursor:pointer;
+  box-shadow:0 0 12px rgba(0,234,255,.06);
+}
+
+button:active{
+  transform:scale(.98);
+}
+
+button.primary{
+  background:linear-gradient(135deg,#006477,#00a8b9);
+  border-color:#00eaff;
+  color:#fff;
+  font-weight:800;
+}
+
+button.green{
+  border-color:#00c985;
+  background:linear-gradient(135deg,#063f32,#087b5a);
+}
+
+button.warn{
+  border-color:#b89b00;
+  background:linear-gradient(135deg,#302a00,#665700);
+}
+
+button.danger{
+  border-color:#a52f4b;
+  background:linear-gradient(135deg,#3b101b,#6d182d);
+}
+
+button.active{
+  border-color:var(--cyan);
+  box-shadow:0 0 18px rgba(0,234,255,.28);
+}
+
+header{
+  position:sticky;
+  top:0;
+  z-index:1000;
+  padding:13px 14px;
+  background:rgba(5,11,18,.92);
+  backdrop-filter:blur(15px);
+  border-bottom:1px solid #153349;
+}
+
+.header-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+
+.logo{
+  font-weight:900;
+  letter-spacing:1px;
+  color:#fff;
+  font-size:17px;
+}
+
+.logo span{
+  color:var(--cyan);
+}
+
+.status{
+  display:flex;
+  align-items:center;
+  gap:7px;
+  font-size:11px;
+  color:var(--muted);
+}
+
+.dot{
+  width:9px;
+  height:9px;
+  border-radius:50%;
+  background:#777;
+}
+
+.dot.green{
+  background:var(--green);
+  box-shadow:0 0 10px var(--green);
+}
+
+.dot.red{
+  background:var(--red);
+  box-shadow:0 0 10px var(--red);
+}
+
+.container{
+  width:min(1250px,100%);
+  margin:auto;
+  padding:12px;
+}
+
+.panel{
+  background:linear-gradient(145deg,rgba(13,29,45,.96),rgba(6,15,25,.96));
+  border:1px solid #17354d;
+  border-radius:17px;
+  margin-bottom:12px;
+  box-shadow:var(--shadow);
+  overflow:hidden;
+}
+
+.panel-title{
+  padding:12px 14px;
+  border-bottom:1px solid #153349;
+  font-size:12px;
+  font-weight:900;
+  letter-spacing:.8px;
+  color:#bdefff;
+}
+
+.panel-body{
+  padding:13px;
+}
+
+.grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:9px;
+}
+
+@media(min-width:850px){
+  .grid{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+
+.field label{
+  display:block;
+  font-size:10px;
+  color:var(--muted);
+  margin-bottom:5px;
+  text-transform:uppercase;
+}
+
+.field input,
+.field select{
+  width:100%;
+  background:#06121e;
+  border:1px solid #1b4259;
+  border-radius:10px;
+  padding:11px;
+  color:#fff;
+  outline:none;
+}
+
+.field input:focus,
+.field select:focus{
+  border-color:var(--cyan);
+  box-shadow:0 0 12px rgba(0,234,255,.15);
+}
+
+.big-compass{
+  text-align:center;
+  padding:8px 5px 13px;
+}
+
+.compass{
+  width:155px;
+  height:155px;
+  margin:5px auto 12px;
+  border:2px solid #1b5b76;
+  border-radius:50%;
+  position:relative;
+  background:
+    radial-gradient(circle,#102c40 0,#081725 58%,#050c14 100%);
+  box-shadow:
+    0 0 25px rgba(0,234,255,.12),
+    inset 0 0 25px rgba(0,234,255,.08);
+}
+
+.compass::before{
+  content:"";
+  position:absolute;
+  inset:12px;
+  border:1px dashed #24516a;
+  border-radius:50%;
+}
+
+.cardinal{
+  position:absolute;
+  font-size:11px;
+  font-weight:900;
+}
+
+.n{top:8px;left:50%;transform:translateX(-50%);color:#ff6079}
+.s{bottom:8px;left:50%;transform:translateX(-50%)}
+.e{right:9px;top:50%;transform:translateY(-50%)}
+.w{left:9px;top:50%;transform:translateY(-50%)}
+
+.compass-arrow{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:4px;
+  height:60px;
+  transform-origin:50% 100%;
+  transform:translate(-50%,-100%) rotate(0deg);
+  background:linear-gradient(#ff4868 0 48%,#d9f8ff 49%);
+  border-radius:5px;
+  box-shadow:0 0 10px rgba(255,70,100,.7);
+}
+
+.compass-arrow::after{
+  content:"";
+  position:absolute;
+  top:-5px;
+  left:-6px;
+  border-left:8px solid transparent;
+  border-right:8px solid transparent;
+  border-bottom:14px solid #ff4868;
+}
+
+.heading-value{
+  font-size:30px;
+  font-weight:900;
+  color:#fff;
+}
+
+.heading-dir{
+  font-size:12px;
+  color:var(--cyan);
+  margin-top:2px;
+}
+
+.button-row{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+
+.button-row button{
+  flex:1 1 145px;
+}
+
+.status-box{
+  margin-top:9px;
+  padding:10px;
+  border:1px solid #17354d;
+  border-radius:10px;
+  background:#06111c;
+  font-size:12px;
+  color:#a8c4d4;
+}
+
+.status-box strong{
+  color:#fff;
+}
+
+.mode-buttons{
+  display:flex;
+  flex-wrap:wrap;
+  gap:7px;
+}
+
+.mode-buttons button{
+  flex:1 1 90px;
+}
+
+.map-wrap{
+  position:relative;
+}
+
+#map{
+  width:100%;
+  height:430px;
+  background:#07111b;
+}
+
+@media(max-width:600px){
+  #map{
+    height:380px;
+  }
+}
+
+.map-overlay{
+  position:absolute;
+  z-index:500;
+  top:10px;
+  left:10px;
+  right:10px;
+  pointer-events:none;
+}
+
+.map-info{
+  display:inline-block;
+  background:rgba(3,11,18,.88);
+  border:1px solid #1d526d;
+  border-radius:10px;
+  padding:8px 10px;
+  font-size:11px;
+  backdrop-filter:blur(8px);
+}
+
+#profileSvg{
+  width:100%;
+  height:auto;
+  min-height:280px;
+  display:block;
+  background:
+    linear-gradient(rgba(0,234,255,.025) 1px,transparent 1px),
+    linear-gradient(90deg,rgba(0,234,255,.025) 1px,transparent 1px),
+    #06111b;
+  background-size:25px 25px;
+}
+
+.profile-wrap{
+  overflow-x:auto;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-bottom:10px;
+}
+
+@media(min-width:700px){
+  .stats{
+    grid-template-columns:repeat(4,minmax(0,1fr));
+  }
+}
+
+.stat{
+  padding:10px;
+  border:1px solid #17354d;
+  background:#07131f;
+  border-radius:10px;
+}
+
+.stat small{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+}
+
+.stat b{
+  display:block;
+  margin-top:4px;
+  font-size:17px;
+  color:#fff;
+}
+
+.selected{
+  color:var(--yellow)!important;
+}
+
+.table-wrap{
+  overflow:auto;
+  max-height:430px;
+}
+
+table{
+  width:100%;
+  border-collapse:collapse;
+  min-width:650px;
+  font-size:11px;
+}
+
+th{
+  position:sticky;
+  top:0;
+  background:#0b1d2c;
+  color:#88b7ca;
+  padding:9px 6px;
+  text-align:left;
+  border-bottom:1px solid #234b61;
+}
+
+td{
+  padding:8px 6px;
+  border-bottom:1px solid #102b3d;
+}
+
+tr{
+  cursor:pointer;
+}
+
+tr:hover,
+tr.selected-row{
+  background:rgba(0,234,255,.09);
+}
+
+.delta-up{
+  color:#ff6f80;
+}
+
+.delta-down{
+  color:#00ff9d;
+}
+
+.selected-info{
+  padding:11px;
+  margin-top:9px;
+  border:1px solid #8e7900;
+  border-radius:11px;
+  background:rgba(255,230,0,.05);
+  color:#e9e0a0;
+  font-size:12px;
+}
+
+.notice{
+  padding:11px;
+  border-radius:11px;
+  border:1px solid #244b62;
+  background:#07131f;
+  color:#9fb8c8;
+  font-size:12px;
+  line-height:1.5;
+}
+
+.notice b{
+  color:#fff;
+}
+
+.footer{
+  text-align:center;
+  color:#587286;
+  font-size:10px;
+  padding:12px 0 25px;
+}
+
+.leaflet-control-layers{
+  background:#081521!important;
+  color:#fff!important;
+}
+
+.leaflet-control-layers-expanded{
+  border:1px solid #1d526d!important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip{
+  background:#081521;
+  color:#fff;
+}
+
+.profile-point-marker{
+  border-radius:50%;
+}
+
+.loading{
+  display:none;
+  margin-top:9px;
+  color:var(--cyan);
+  font-size:12px;
+}
+
+.loading.show{
+  display:block;
+}
+
+.stale{
+  border-color:#9b7900!important;
+  box-shadow:0 0 16px rgba(255,230,0,.08);
+}
+</style>
+</head>
+
+<body>
+
+<header>
+  <div class="header-row">
+    <div class="logo">ПРОФІЛЬ <span>РЕЛЬЄФУ</span> PRO 2.1</div>
+
+    <div class="status">
+      <span id="gpsDot" class="dot"></span>
+      <span id="gpsMini">GPS</span>
+      <span>•</span>
+      <span id="compassMini">🧭</span>
+    </div>
+  </div>
+</header>
+
+<div class="container">
+
+  <!-- GPS / COMPASS -->
+  <section class="panel">
+    <div class="panel-title">📍 АВТОМАТИЧНА ПОЗИЦІЯ + 🧭 КОМПАС</div>
+
+    <div class="panel-body">
+
+      <div class="grid">
+
+        <div class="field">
+          <label>Широта</label>
+          <input id="lat" type="number" step="any" placeholder="GPS">
+        </div>
+
+        <div class="field">
+          <label>Довгота</label>
+          <input id="lon" type="number" step="any" placeholder="GPS">
+        </div>
+
+        <div class="field">
+          <label>Точність GPS</label>
+          <input id="accuracy" type="text" readonly value="—">
+        </div>
+
+        <div class="field">
+          <label>Висота GPS</label>
+          <input id="gpsAlt" type="text" readonly value="—">
+        </div>
+
+      </div>
+
+      <div class="big-compass">
+
+        <div class="compass">
+
+          <div class="cardinal n">N</div>
+          <div class="cardinal e">E</div>
+          <div class="cardinal s">S</div>
+          <div class="cardinal w">W</div>
+
+          <div id="compassArrow" class="compass-arrow"></div>
+
+        </div>
+
+        <div id="headingValue" class="heading-value">—°</div>
+        <div id="headingDir" class="heading-dir">Компас не активований</div>
+
+      </div>
+
+      <div class="button-row">
+        <button id="startSensors" class="primary">
+          📍 УВІМКНУТИ GPS + 🧭 КОМПАС
+        </button>
+
+        <button id="centerMap">
+          🎯 МОЄ МІСЦЕ
+        </button>
+      </div>
+
+      <div class="button-row" style="margin-top:8px">
+
+        <button id="offset180" class="warn">
+          ↕ 180°
+        </button>
+
+        <button id="offsetReset">
+          ↺ Скинути поправку
+        </button>
+
+      </div>
+
+      <div class="grid" style="margin-top:10px">
+
+        <div class="field">
+          <label>Поправка компаса, °</label>
+          <input id="compassOffset"
+                 type="number"
+                 step="1"
+                 value="0">
+        </div>
+
+        <div class="field">
+          <label>Сектор</label>
+
+          <select id="sector">
+            <option value="10">10°</option>
+            <option value="15">15°</option>
+            <option value="20" selected>20°</option>
+          </select>
+
+        </div>
+
+      </div>
+
+      <div id="sensorStatus" class="status-box">
+        Натисни <strong>«УВІМКНУТИ GPS + КОМПАС»</strong>.
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- DISTANCE -->
+  <section class="panel">
+
+    <div class="panel-title">📏 ДИСТАНЦІЯ ПРОФІЛЮ</div>
+
+    <div class="panel-body">
+
+      <div class="mode-buttons">
+
+        <button data-distance="100">100 м</button>
+        <button data-distance="500">500 м</button>
+        <button data-distance="1000" class="active">1000 м</button>
+        <button data-distance="custom">Власна</button>
+
+      </div>
+
+      <div class="field"
+           id="customDistanceBox"
+           style="display:none;margin-top:10px">
+
+        <label>Відстань, метрів</label>
+
+        <input id="customDistance"
+               type="number"
+               min="10"
+               max="50000"
+               step="10"
+               value="2000">
+
+      </div>
+
+      <div class="button-row" style="margin-top:10px">
+
+        <button id="calculate" class="primary">
+          📐 РОЗРАХУВАТИ ПРОФІЛЬ
+        </button>
+
+      </div>
+
+      <div id="loading" class="loading">
+        ⏳ Отримую висоти та будую профіль...
+      </div>
+
+      <div id="calcStatus" class="status-box">
+        Профіль ще не розрахований.
+      </div>
+
+    </div>
+  </section>
+
+
+  <!-- MAP -->
+  <section class="panel">
+
+    <div class="panel-title">🗺️ КАРТА + НАПРЯМОК ПРОФІЛЮ</div>
+
+    <div class="map-wrap">
+
+      <div class="map-overlay">
+        <div id="mapInfo" class="map-info">
+          Очікую координати...
+        </div>
+      </div>
+
+      <div id="map"></div>
+
+    </div>
+
+  </section>
+
+
+  <!-- PROFILE -->
+  <section id="profilePanel" class="panel">
+
+    <div class="panel-title">📈 ЗРІЗ ВИСОТ / РЕЛЬЄФ</div>
+
+    <div class="panel-body">
+
+      <div class="stats">
+
+        <div class="stat">
+          <small>Мін. висота</small>
+          <b id="minElev">—</b>
+        </div>
+
+        <div class="stat">
+          <small>Макс. висота</small>
+          <b id="maxElev">—</b>
+        </div>
+
+        <div class="stat">
+          <small>Підйом</small>
+          <b id="totalUp">—</b>
+        </div>
+
+        <div class="stat">
+          <small>Спуск</small>
+          <b id="totalDown">—</b>
+        </div>
+
+      </div>
+
+      <div class="profile-wrap">
+
+        <svg id="profileSvg"
+             viewBox="0 0 1200 480"
+             preserveAspectRatio="none">
+
+          <text x="600"
+                y="240"
+                text-anchor="middle"
+                fill="#557386"
+                font-size="18">
+            Профіль ще не розрахований
+          </text>
+
+        </svg>
+
+      </div>
+
+      <div id="selectedInfo"
+           class="selected-info"
+           style="display:none"></div>
+
+    </div>
+
+  </section>
+
+
+  <!-- TABLE -->
+  <section class="panel">
+
+    <div class="panel-title">📋 ТОЧКИ ПРОФІЛЮ</div>
+
+    <div class="panel-body">
+
+      <div class="notice">
+        <b>Взаємодія:</b>
+        натисни точку на графіку, точку на карті або рядок таблиці —
+        всі три елементи синхронізуються.
+      </div>
+
+      <div class="table-wrap" style="margin-top:10px">
+
+        <table>
+
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Відстань</th>
+              <th>Висота</th>
+              <th>Δ</th>
+              <th>Широта</th>
+              <th>Довгота</th>
+            </tr>
+          </thead>
+
+          <tbody id="profileTable">
+            <tr>
+              <td colspan="6"
+                  style="text-align:center;color:#587286">
+                Даних поки немає
+              </td>
+            </tr>
+          </tbody>
+
+        </table>
+
+      </div>
+
+    </div>
+
+  </section>
+
+
+  <!-- INFO -->
+  <section class="panel">
+
+    <div class="panel-title">ℹ️ ЯК ЦЕ ПРАЦЮЄ</div>
+
+    <div class="panel-body">
+
+      <div class="notice">
+
+        <b>1.</b> Дозволяєш браузеру доступ до GPS та датчиків.<br><br>
+
+        <b>2.</b> Телефон автоматично визначає координати та напрямок.<br><br>
+
+        <b>3.</b> Повертаєш телефон у потрібному напрямку.<br><br>
+
+        <b>4.</b> Натискаєш «Розрахувати профіль».<br><br>
+
+        <b>5.</b> Програма створює точки по заданому напрямку,
+        отримує висоту кожної точки та будує зріз рельєфу.<br><br>
+
+        <b>6.</b> Після зміни положення телефона профіль позначається
+        як застарілий — потрібно виконати новий розрахунок.
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <div class="footer">
+    ПРОФІЛЬ РЕЛЬЄФУ PRO 2.1 • GitHub Pages • GPS + Compass
+  </div>
+
+</div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+"use strict";
+
+/* =========================================================
+   CONFIG
+========================================================= */
+
+const POINTS_COUNT = 41;
+
+let selectedMeters = 1000;
+let sectorWidth = 20;
+
+let gpsWatchId = null;
+
+let currentLat = null;
+let currentLon = null;
+let currentAccuracy = null;
+let currentGpsAlt = null;
+
+let rawHeading = null;
+let currentHeading = null;
+
+let absoluteReceived = false;
+
+let compassOffset =
+  Number(localStorage.getItem("terrainCompassOffset") || 0);
+
+let profile = [];
+let selectedIndex = null;
+
+let profileHeading = null;
+let profileLat = null;
+let profileLon = null;
+
+let startMarker = null;
+let endMarker = null;
+let userMarker = null;
+let selectedMarker = null;
+
+let routeLine = null;
+let sectorPolygon = null;
+let leftSectorLine = null;
+let rightSectorLine = null;
+
+let pointMarkers = [];
+
+const $ = id => document.getElementById(id);
+
+
+/* =========================================================
+   MAP
+========================================================= */
+
+const map = L.map("map", {
+  zoomControl:true,
+  attributionControl:true
+}).setView([49.0,31.0],6);
+
+const osm = L.tileLayer(
+  "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+  {
+    maxZoom:19,
+    attribution:"© OpenStreetMap"
+  }
+).addTo(map);
+
+const satellite = L.tileLayer(
+  "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+  {
+    maxZoom:19,
+    attribution:"Tiles © Esri"
+  }
+);
+
+L.control.layers({
+  "OSM":osm,
+  "🛰️ Супутник":satellite
+}).addTo(map);
+
+
+/* =========================================================
+   HELPERS
+========================================================= */
+
+function clamp(v,min,max){
+  return Math.max(min,Math.min(max,v));
+}
+
+function normalize360(v){
+  return ((v % 360) + 360) % 360;
+}
+
+function directionName(deg){
+
+  const dirs = [
+    "Пн",
+    "ПнСх",
+    "Сх",
+    "ПдСх",
+    "Пд",
+    "ПдЗх",
+    "Зх",
+    "ПнЗх"
+  ];
+
+  return dirs[
+    Math.round(normalize360(deg)/45) % 8
+  ];
+}
+
+function formatCoord(v){
+  return Number(v).toFixed(6);
+}
+
+function sleep(ms){
+  return new Promise(resolve => setTimeout(resolve,ms));
+}
+
+
+/* =========================================================
+   GPS
+========================================================= */
+
+function updateGpsUI(){
+
+  if(currentLat === null || currentLon === null){
+
+    $("gpsDot").className = "dot";
+    $("gpsMini").textContent = "GPS";
+
+    $("mapInfo").textContent =
+      "Очікую координати...";
+
+    return;
+  }
+
+  $("gpsDot").className = "dot green";
+  $("gpsMini").textContent =
+    currentAccuracy
+      ? `GPS ±${Math.round(currentAccuracy)}м`
+      : "GPS OK";
+
+  $("lat").value = currentLat.toFixed(6);
+  $("lon").value = currentLon.toFixed(6);
+
+  $("accuracy").value =
+    currentAccuracy != null
+      ? `± ${Math.round(currentAccuracy)} м`
+      : "—";
+
+  $("gpsAlt").value =
+    currentGpsAlt != null
+      ? `${Math.round(currentGpsAlt)} м`
+      : "—";
+
+  $("mapInfo").innerHTML =
+    `📍 ${formatCoord(currentLat)}, ${formatCoord(currentLon)}`
+    + (currentAccuracy
+      ? ` • ±${Math.round(currentAccuracy)} м`
+      : "");
+
+  updateUserMarker();
+}
+
+
+function startGPS(){
+
+  if(!navigator.geolocation){
+
+    $("sensorStatus").innerHTML =
+      "❌ Цей браузер не підтримує GPS.";
+
+    return;
+  }
+
+  if(gpsWatchId !== null){
+    navigator.geolocation.clearWatch(gpsWatchId);
+  }
+
+  gpsWatchId =
+    navigator.geolocation.watchPosition(
+
+      position => {
+
+        const c = position.coords;
+
+        currentLat = c.latitude;
+        currentLon = c.longitude;
+        currentAccuracy = c.accuracy;
+        currentGpsAlt = c.altitude;
+
+        updateGpsUI();
+
+        markProfileStale();
+
+      },
+
+      error => {
+
+        let text = "Помилка GPS.";
+
+        if(error.code === 1)
+          text = "❌ Доступ до GPS заборонено.";
+
+        if(error.code === 2)
+          text = "❌ Позицію GPS не вдалося визначити.";
+
+        if(error.code === 3)
+          text = "⏱️ GPS не відповів вчасно.";
+
+        $("sensorStatus").innerHTML = text;
+
+      },
+
+      {
+        enableHighAccuracy:true,
+        maximumAge:1000,
+        timeout:20000
+      }
+    );
+}
+
+
+/* =========================================================
+   COMPASS
+========================================================= */
+
+function getCompassHeading(event){
+
+  /*
+    iOS:
+    webkitCompassHeading already represents
+    the compass heading in degrees.
+
+    Android:
+    alpha is converted into compass heading.
+  */
+
+  if(typeof event.webkitCompassHeading === "number"){
+    return normalize360(event.webkitCompassHeading);
+  }
+
+  if(typeof event.alpha !== "number"){
+    return null;
+  }
+
+  let heading =
+    360 - event.alpha;
+
+  return normalize360(heading);
+}
+
+
+function handleOrientation(event){
+
+  if(event.absolute === true){
+    absoluteReceived = true;
+  }
+
+  if(event.absolute !== true && absoluteReceived){
+    return;
+  }
+
+  const h = getCompassHeading(event);
+
+  if(h === null) return;
+
+  rawHeading = h;
+
+  currentHeading =
+    normalize360(rawHeading + compassOffset);
+
+  updateCompassUI();
+
+  markProfileStale();
+}
+
+
+function startCompass(){
+
+  /*
+    iOS 13+ requires permission from a user gesture.
+  */
+
+  if(
+    typeof DeviceOrientationEvent !== "undefined" &&
+    typeof DeviceOrientationEvent.requestPermission === "function"
+  ){
+
+    DeviceOrientationEvent
+      .requestPermission()
+      .then(permission => {
+
+        if(permission === "granted"){
+          attachCompass();
+        }else{
+          $("sensorStatus").innerHTML =
+            "❌ Доступ до компаса не надано.";
+        }
+
+      })
+      .catch(() => {
+
+        $("sensorStatus").innerHTML =
+          "❌ Не вдалося активувати компас.";
+
+      });
+
+  }else{
+
+    attachCompass();
+
+  }
+}
+
+
+function attachCompass(){
+
+  window.addEventListener(
+    "deviceorientationabsolute",
+    handleOrientation,
+    true
+  );
+
+  window.addEventListener(
+    "deviceorientation",
+    handleOrientation,
+    true
+  );
+
+  $("sensorStatus").innerHTML =
+    "🧭 Компас активований. Поверни телефон у потрібному напрямку.";
+
+}
+
+
+function updateCompassUI(){
+
+  if(currentHeading === null){
+
+    $("headingValue").textContent = "—°";
+    $("headingDir").textContent =
+      "Компас не активований";
+
+    $("compassMini").textContent = "🧭";
+
+    return;
+  }
+
+  const h = Math.round(currentHeading);
+
+  $("headingValue").textContent =
+    `${h}°`;
+
+  $("headingDir").textContent =
+    directionName(h);
+
+  $("compassMini").textContent =
+    `🧭 ${h}°`;
+
+  $("compassArrow").style.transform =
+    `translate(-50%,-100%) rotate(${h}deg)`;
+
+  $("sensorStatus").innerHTML =
+    `📍 GPS: ${currentLat !== null ? "OK" : "очікування"}`
+    + ` • 🧭 Напрямок: <strong>${h}° ${directionName(h)}</strong>`;
+
+  updateMapDirection();
+}
+
+
+/* =========================================================
+   SENSOR BUTTON
+========================================================= */
+
+$("startSensors").addEventListener("click",()=>{
+
+  startGPS();
+  startCompass();
+
+});
+
+
+/* =========================================================
+   COMPASS OFFSET
+========================================================= */
+
+$("compassOffset").value = compassOffset;
+
+$("compassOffset").addEventListener("change",()=>{
+
+  compassOffset =
+    Number($("compassOffset").value || 0);
+
+  compassOffset =
+    clamp(compassOffset,-180,180);
+
+  $("compassOffset").value =
+    compassOffset;
+
+  localStorage.setItem(
+    "terrainCompassOffset",
+    compassOffset
+  );
+
+  if(rawHeading !== null){
+
+    currentHeading =
+      normalize360(rawHeading + compassOffset);
+
+    updateCompassUI();
+  }
+
+});
+
+
+$("offset180").addEventListener("click",()=>{
+
+  compassOffset =
+    normalize360(compassOffset + 180);
+
+  if(compassOffset > 180){
+    compassOffset -= 360;
+  }
+
+  $("compassOffset").value =
+    compassOffset;
+
+  localStorage.setItem(
+    "terrainCompassOffset",
+    compassOffset
+  );
+
+  if(rawHeading !== null){
+
+    currentHeading =
+      normalize360(rawHeading + compassOffset);
+
+    updateCompassUI();
+  }
+
+});
+
+
+$("offsetReset").addEventListener("click",()=>{
+
+  compassOffset = 0;
+
+  $("compassOffset").value = 0;
+
+  localStorage.setItem(
+    "terrainCompassOffset",
+    0
+  );
+
+  if(rawHeading !== null){
+
+    currentHeading =
+      normalize360(rawHeading);
+
+    updateCompassUI();
+  }
+
+});
+
+
+/* =========================================================
+   USER MARKER
+========================================================= */
+
+function updateUserMarker(){
+
+  if(currentLat === null) return;
+
+  const pos =
+    [currentLat,currentLon];
+
+  if(!userMarker){
+
+    userMarker =
+      L.circleMarker(
+        pos,
+        {
+          radius:8,
+          color:"#00ff9d",
+          fillColor:"#00ff9d",
+          fillOpacity:.95,
+          weight:2
+        }
+      )
+      .addTo(map)
+      .bindPopup("📍 Поточне місце");
+
+  }else{
+
+    userMarker.setLatLng(pos);
+
+  }
+}
+
+
+/* =========================================================
+   GEO DESTINATION
+========================================================= */
+
+function destinationPoint(lat,lon,bearing,distance){
+
+  const R = 6371000;
+
+  const φ1 = lat * Math.PI / 180;
+  const λ1 = lon * Math.PI / 180;
+
+  const θ = bearing * Math.PI / 180;
+  const δ = distance / R;
+
+  const sinφ1 = Math.sin(φ1);
+  const cosφ1 = Math.cos(φ1);
+
+  const sinδ = Math.sin(δ);
+  const cosδ = Math.cos(δ);
+
+  const sinφ2 =
+    sinφ1*cosδ +
+    cosφ1*sinδ*Math.cos(θ);
+
+  const φ2 =
+    Math.asin(sinφ2);
+
+  const y =
+    Math.sin(θ)*sinδ*cosφ1;
+
+  const x =
+    cosδ - sinφ1*sinφ2;
+
+  const λ2 =
+    λ1 + Math.atan2(y,x);
+
+  return {
+    lat:φ2*180/Math.PI,
+    lon:normalizeLon(λ2*180/Math.PI)
+  };
+}
+
+
+function normalizeLon(lon){
+  return ((lon + 540) % 360) - 180;
+}
+
+
+/* =========================================================
+   MAP DIRECTION
+========================================================= */
+
+function clearDirectionLayers(){
+
+  [
+    routeLine,
+    sectorPolygon,
+    leftSectorLine,
+    rightSectorLine
+  ].forEach(layer=>{
+
+    if(layer){
+      map.removeLayer(layer);
+    }
+
+  });
+
+  routeLine = null;
+  sectorPolygon = null;
+  leftSectorLine = null;
+  rightSectorLine = null;
+}
+
+
+function updateMapDirection(){
+
+  if(
+    currentLat === null ||
+    currentLon === null ||
+    currentHeading === null
+  ){
+    return;
+  }
+
+  clearDirectionLayers();
+
+  const maxDistance =
+    selectedMeters;
+
+  const center =
+    destinationPoint(
+      currentLat,
+      currentLon,
+      currentHeading,
+      maxDistance
+    );
+
+  const left =
+    destinationPoint(
+      currentLat,
+      currentLon,
+      currentHeading-sectorWidth/2,
+      maxDistance
+    );
+
+  const right =
+    destinationPoint(
+      currentLat,
+      currentLon,
+      currentHeading+sectorWidth/2,
+      maxDistance
+    );
+
+  routeLine =
+    L.polyline(
+      [
+        [currentLat,currentLon],
+        [center.lat,center.lon]
+      ],
+      {
+        color:"#00eaff",
+        weight:4,
+        opacity:.9
+      }
+    ).addTo(map);
+
+  leftSectorLine =
+    L.polyline(
+      [
+        [currentLat,currentLon],
+        [left.lat,left.lon]
+      ],
+      {
+        color:"#00eaff",
+        weight:1,
+        dashArray:"6 7",
+        opacity:.7
+      }
+    ).addTo(map);
+
+  rightSectorLine =
+    L.polyline(
+      [
+        [currentLat,currentLon],
+        [right.lat,right.lon]
+      ],
+      {
+        color:"#00eaff",
+        weight:1,
+        dashArray:"6 7",
+        opacity:.7
+      }
+    ).addTo(map);
+
+  sectorPolygon =
+    L.polygon(
+      [
+        [currentLat,currentLon],
+        [left.lat,left.lon],
+        [right.lat,right.lon]
+      ],
+      {
+        color:"#00eaff",
+        fillColor:"#00eaff",
+        fillOpacity:.07,
+        weight:1
+      }
+    ).addTo(map);
+}
+
+
+/* =========================================================
+   CENTER MAP
+========================================================= */
+
+$("centerMap").addEventListener("click",()=>{
+
+  if(currentLat === null){
+
+    $("sensorStatus").innerHTML =
+      "Спочатку увімкни GPS.";
+
+    return;
+  }
+
+  map.setView(
+    [currentLat,currentLon],
+    Math.max(map.getZoom(),15)
+  );
+
+});
+
+
+/* =========================================================
+   DISTANCE
+========================================================= */
+
+document
+  .querySelectorAll("[data-distance]")
+  .forEach(btn=>{
+
+    btn.addEventListener("click",()=>{
+
+      document
+        .querySelectorAll("[data-distance]")
+        .forEach(b=>b.classList.remove("active"));
+
+      btn.classList.add("active");
+
+      const val =
+        btn.dataset.distance;
+
+      if(val === "custom"){
+
+        $("customDistanceBox").style.display =
+          "block";
+
+      }else{
+
+        $("customDistanceBox").style.display =
+          "none";
+
+        selectedMeters =
+          Number(val);
+
+      }
+
+      updateMapDirection();
+
+    });
+
+  });
+
+
+$("customDistance").addEventListener("change",()=>{
+
+  selectedMeters =
+    clamp(
+      Number($("customDistance").value || 2000),
+      10,
+      50000
+    );
+
+  $("customDistance").value =
+    selectedMeters;
+
+  updateMapDirection();
+
+});
+
+
+$("sector").addEventListener("change",()=>{
+
+  sectorWidth =
+    Number($("sector").value);
+
+  updateMapDirection();
+
+});
+
+
+/* =========================================================
+   ELEVATION API
+========================================================= */
+
+async function getElevations(points){
+
+  const locations =
+    points.map(p=>({
+      latitude:p.lat,
+      longitude:p.lon
+    }));
+
+  const response =
+    await fetch(
+      "https://api.open-elevation.com/api/v1/lookup",
+      {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json"
+        },
+        body:JSON.stringify({
+          locations
+        })
+      }
+    );
+
+  if(!response.ok){
+    throw new Error(
+      `Elevation API HTTP ${response.status}`
+    );
+  }
+
+  const data =
+    await response.json();
+
+  if(
+    !data.results ||
+    data.results.length !== points.length
+  ){
+    throw new Error(
+      "Неповна відповідь сервісу висот."
+    );
+  }
+
+  return data.results.map(r=>Number(r.elevation));
+}
+
+
+/* =========================================================
+   PROFILE CALCULATION
+========================================================= */
+
+async function calculateProfile(){
+
+  if(currentLat === null || currentLon === null){
+
+    $("calcStatus").innerHTML =
+      "❌ Немає координат GPS.";
+
+    return;
+  }
+
+  if(currentHeading === null){
+
+    $("calcStatus").innerHTML =
+      "❌ Немає напрямку компаса.";
+
+    return;
+  }
+
+  selectedMeters =
+    clamp(
+      selectedMeters,
+      10,
+      50000
+    );
+
+  const headingAtStart =
+    currentHeading;
+
+  const latAtStart =
+    currentLat;
+
+  const lonAtStart =
+    currentLon;
+
+  $("loading").classList.add("show");
+
+  $("calcStatus").textContent =
+    "Формую точки профілю...";
+
+  try{
+
+    const points = [];
+
+    for(
+      let i=0;
+      i<POINTS_COUNT;
+      i++
+    ){
+
+      const distance =
+        selectedMeters *
+        i /
+        (POINTS_COUNT-1);
+
+      const p =
+        destinationPoint(
+          latAtStart,
+          lonAtStart,
+          headingAtStart,
+          distance
+        );
+
+      points.push({
+        index:i,
+        distance,
+        lat:p.lat,
+        lon:p.lon,
+        elevation:null
+      });
+
+    }
+
+    $("calcStatus").textContent =
+      "Отримую висоти...";
+
+    const elevations =
+      await getElevations(points);
+
+    points.forEach((p,i)=>{
+      p.elevation = elevations[i];
+    });
+
+    profile = points;
+
+    profileHeading =
+      headingAtStart;
+
+    profileLat =
+      latAtStart;
+
+    profileLon =
+      lonAtStart;
+
+    selectedIndex = 0;
+
+    renderProfile();
+    renderTable();
+    renderProfileMarkers();
+
+    drawDirectionForProfile();
+
+    $("calcStatus").innerHTML =
+      `✅ Готово: ${POINTS_COUNT} точок • `
+      + `${selectedMeters} м • `
+      + `${Math.round(headingAtStart)}° `
+      + `${directionName(headingAtStart)}`;
+
+    $("loading").classList.remove("show");
+
+    selectProfilePoint(0);
+
+  }catch(error){
+
+    console.error(error);
+
+    $("calcStatus").innerHTML =
+      `❌ Не вдалося отримати висоти: ${error.message}`;
+
+    $("loading").classList.remove("show");
+
+  }
+
+}
+
+
+/* =========================================================
+   CALCULATE BUTTON
+========================================================= */
+
+$("calculate").addEventListener("click",calculateProfile);
+
+
+/* =========================================================
+   PROFILE STALE
+========================================================= */
+
+function markProfileStale(){
+
+  if(profile.length === 0){
+    return;
+  }
+
+  if(profileLat === null || profileHeading === null){
+    return;
+  }
+
+  const positionChanged =
+    Math.abs(currentLat-profileLat) > 0.00005 ||
+    Math.abs(currentLon-profileLon) > 0.00005;
+
+  const headingChanged =
+    Math.abs(
+      normalize360(currentHeading-profileHeading)
+    ) > 2;
+
+  if(positionChanged || headingChanged){
+
+    $("profilePanel").classList.add("stale");
+
+    $("calcStatus").innerHTML =
+      "⚠️ Положення або напрямок змінилися. "
+      + "Натисни «РОЗРАХУВАТИ ПРОФІЛЬ» ще раз.";
+  }
+
+}
+
+
+/* =========================================================
+   DRAW PROFILE
+========================================================= */
+
+function renderProfile(){
+
+  const svg =
+    $("profileSvg");
+
+  while(svg.firstChild){
+    svg.removeChild(svg.firstChild);
+  }
+
+  if(profile.length === 0){
+    return;
+  }
+
+  const W = 1200;
+  const H = 480;
+
+  const padL = 70;
+  const padR = 25;
+  const padT = 35;
+  const padB = 55;
+
+  const minE =
+    Math.min(...profile.map(p=>p.elevation));
+
+  const maxE =
+    Math.max(...profile.map(p=>p.elevation));
+
+  const range =
+    Math.max(5,maxE-minE);
+
+  const yMin =
+    minE - range*.12;
+
+  const yMax =
+    maxE + range*.12;
+
+  const chartW =
+    W-padL-padR;
+
+  const chartH =
+    H-padT-padB;
+
+  function x(i){
+    return padL +
+      i/(profile.length-1)*chartW;
+  }
+
+  function y(e){
+    return padT +
+      (yMax-e)/(yMax-yMin)*chartH;
+  }
+
+  /* grid */
+
+  for(let i=0;i<=5;i++){
+
+    const yy =
+      padT + i/5*chartH;
+
+    const line =
+      document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "line"
+      );
+
+    line.setAttribute("x1",padL);
+    line.setAttribute("x2",W-padR);
+    line.setAttribute("y1",yy);
+    line.setAttribute("y2",yy);
+
+    line.setAttribute(
+      "stroke",
+      "#17354d"
+    );
+
+    line.setAttribute(
+      "stroke-width",
+      "1"
+    );
+
+    svg.appendChild(line);
+
+    const label =
+      document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "text"
+      );
+
+    label.setAttribute(
+      "x",
+      padL-10
+    );
+
+    label.setAttribute(
+      "y",
+      yy+4
+    );
+
+    label.setAttribute(
+      "text-anchor",
+      "end"
+    );
+
+    label.setAttribute(
+      "fill",
+      "#6f8da1"
+    );
+
+    label.setAttribute(
+      "font-size",
+      "11"
+    );
+
+    label.textContent =
+      Math.round(
+        yMax-i/5*(yMax-yMin)
+      )+" м";
+
+    svg.appendChild(label);
+
+  }
+
+  /* area */
+
+  let linePath = "";
+
+  profile.forEach((p,i)=>{
+
+    linePath +=
+      `${i===0?"M":"L"} ${x(i)} ${y(p.elevation)} `;
+
+  });
+
+  const areaPath =
+    linePath +
+    `L ${x(profile.length-1)} ${H-padB}`
+    + `L ${x(0)} ${H-padB} Z`;
+
+  const area =
+    document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+
+  area.setAttribute(
+    "d",
+    areaPath
+  );
+
+  area.setAttribute(
+    "fill",
+    "rgba(0,234,255,.10)"
+  );
+
+  area.setAttribute(
+    "stroke",
+    "none"
+  );
+
+  svg.appendChild(area);
+
+  /* profile line */
+
+  const path =
+    document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "path"
+    );
+
+  path.setAttribute(
+    "d",
+    linePath
+  );
+
+  path.setAttribute(
+    "fill",
+    "none"
+  );
+
+  path.setAttribute(
+    "stroke",
+    "#00eaff"
+  );
+
+  path.setAttribute(
+    "stroke-width",
+    "4"
+  );
+
+  path.setAttribute(
+    "stroke-linejoin",
+    "round"
+  );
+
+  path.setAttribute(
+    "stroke-linecap",
+    "round"
+  );
+
+  svg.appendChild(path);
+
+  /* points */
+
+  profile.forEach((p,i)=>{
+
+    const c =
+      document.createElementNS(
+        "http://www.w3.org/2000/svg",
+        "circle"
+      );
+
+    c.setAttribute(
+      "cx",
+      x(i)
+    );
+
+    c.setAttribute(
+      "cy",
+      y(p.elevation)
+    );
+
+    c.setAttribute(
+      "r",
+      "7"
+    );
+
+    c.setAttribute(
+      "fill",
+      "#00eaff"
+    );
+
+    c.setAttribute(
+      "fill-opacity",
+      "0.01"
+    );
+
+    c.setAttribute(
+      "stroke",
+      "none"
+    );
+
+    c.style.cursor =
+      "pointer";
+
+    c.addEventListener(
+      "click",
+      ()=>selectProfilePoint(i)
+    );
+
+    svg.appendChild(c);
+
+  });
+
+  /* visible selected point */
+
+  drawSelectedSvg(
+    svg,
+    x,
+    y
+  );
+
+  $("minElev").textContent =
+    `${Math.round(minE)} м`;
+
+  $("maxElev").textContent =
+    `${Math.round(maxE)} м`;
+
+  let up = 0;
+  let down = 0;
+
+  for(let i=1;i<profile.length;i++){
+
+    const d =
+      profile[i].elevation -
+      profile[i-1].elevation;
+
+    if(d>0) up += d;
+    if(d<0) down += Math.abs(d);
+
+  }
+
+  $("totalUp").textContent =
+    `+${Math.round(up)} м`;
+
+  $("totalDown").textContent =
+    `-${Math.round(down)} м`;
+
+}
+
+
+/* =========================================================
+   SELECTED SVG
+========================================================= */
+
+function drawSelectedSvg(svg,x,y){
+
+  if(
+    selectedIndex === null ||
+    !profile[selectedIndex]
+  ){
+    return;
+  }
+
+  const p =
+    profile[selectedIndex];
+
+  const xx =
+    x(selectedIndex);
+
+  const yy =
+    y(p.elevation);
+
+  const line =
+    document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "line"
+    );
+
+  line.setAttribute("x1",xx);
+  line.setAttribute("x2",xx);
+  line.setAttribute("y1",35);
+  line.setAttribute("y2",425);
+
+  line.setAttribute(
+    "stroke",
+    "#ffe600"
+  );
+
+  line.setAttribute(
+    "stroke-width",
+    "2"
+  );
+
+  line.setAttribute(
+    "stroke-dasharray",
+    "6 6"
+  );
+
+  svg.appendChild(line);
+
+  const circle =
+    document.createElementNS(
+      "http://www.w3.org/2000/svg",
+      "circle"
+    );
+
+  circle.setAttribute(
+    "cx",
+    xx
+  );
+
+  circle.setAttribute(
+    "cy",
+    yy
+  );
+
+  circle.setAttribute(
+    "r",
+    "8"
+  );
+
+  circle.setAttribute(
+    "fill",
+    "#ffe600"
+  );
+
+  circle.setAttribute(
+    "stroke",
+    "#fff"
+  );
+
+  circle.setAttribute(
+    "stroke-width",
+    "2"
+  );
+
+  svg.appendChild(circle);
+
+}
+
+
+/* =========================================================
+   TABLE
+========================================================= */
+
+function renderTable(){
+
+  const tbody =
+    $("profileTable");
+
+  tbody.innerHTML = "";
+
+  profile.forEach((p,i)=>{
+
+    const tr =
+      document.createElement("tr");
+
+    tr.dataset.index = i;
+
+    const delta =
+      i === 0
+        ? 0
+        : p.elevation-profile[i-1];
+
+    let d = 0;
+
+    if(i>0){
+      d =
+        p.elevation -
+        profile[i-1].elevation;
+    }
+
+    tr.innerHTML = `
+      <td>${i}</td>
+      <td>${Math.round(p.distance)} м</td>
+      <td>${Math.round(p.elevation)} м</td>
+      <td class="${d>0?"delta-up":d<0?"delta-down":""}">
+        ${d>0?"+":""}${Math.round(d)} м
+      </td>
+      <td>${formatCoord(p.lat)}</td>
+      <td>${formatCoord(p.lon)}</td>
+    `;
+
+    tr.addEventListener(
+      "click",
+      ()=>selectProfilePoint(i)
+    );
+
+    tbody.appendChild(tr);
+
+  });
+
+}
+
+
+/* =========================================================
+   PROFILE MARKERS
+========================================================= */
+
+function clearProfileMarkers(){
+
+  pointMarkers.forEach(marker=>{
+    map.removeLayer(marker);
+  });
+
+  pointMarkers = [];
+
+  if(selectedMarker){
+    map.removeLayer(selectedMarker);
+    selectedMarker = null;
+  }
+
+}
+
+
+function renderProfileMarkers(){
+
+  clearProfileMarkers();
+
+  profile.forEach((p,i)=>{
+
+    const marker =
+      L.circleMarker(
+        [p.lat,p.lon],
+        {
+          radius:4,
+          color:"#00eaff",
+          fillColor:"#00eaff",
+          fillOpacity:.65,
+          weight:1
+        }
+      )
+      .addTo(map);
+
+    marker.bindTooltip(
+      `#${i} • ${Math.round(p.distance)} м • ${Math.round(p.elevation)} м`,
+      {
+        direction:"top"
+      }
+    );
+
+    marker.on(
+      "click",
+      e=>{
+        L.DomEvent.stopPropagation(e);
+        selectProfilePoint(i);
+      }
+    );
+
+    pointMarkers.push(marker);
+
+  });
+
+}
+
+
+/* =========================================================
+   SELECT POINT
+========================================================= */
+
+function selectProfilePoint(index){
+
+  if(
+    index < 0 ||
+    index >= profile.length
+  ){
+    return;
+  }
+
+  selectedIndex = index;
+
+  const p =
+    profile[index];
+
+  renderProfile();
+  renderTable();
+
+  document
+    .querySelectorAll("#profileTable tr")
+    .forEach((tr,i)=>{
+
+      tr.classList.toggle(
+        "selected-row",
+        i === index
+      );
+
+    });
+
+  $("selectedInfo").style.display =
+    "block";
+
+  $("selectedInfo").innerHTML =
+    `<b>🎯 Обрана точка #${index}</b><br>`
+    + `Відстань: <b>${Math.round(p.distance)} м</b><br>`
+    + `Висота: <b>${Math.round(p.elevation)} м</b><br>`
+    + `Координати: <b>${formatCoord(p.lat)}, ${formatCoord(p.lon)}</b>`;
+
+  if(selectedMarker){
+    map.removeLayer(selectedMarker);
+  }
+
+  selectedMarker =
+    L.circleMarker(
+      [p.lat,p.lon],
+      {
+        radius:9,
+        color:"#fff",
+        fillColor:"#ffe600",
+        fillOpacity:1,
+        weight:3
+      }
+    )
+    .addTo(map)
+    .bindPopup(
+      `<b>Точка #${index}</b><br>`
+      + `${Math.round(p.distance)} м<br>`
+      + `${Math.round(p.elevation)} м`
+    )
+    .openPopup();
+
+  map.setView(
+    [p.lat,p.lon],
+    Math.max(map.getZoom(),15),
+    {
+      animate:true
+    }
+  );
+
+}
+
+
+/* =========================================================
+   MAP CLICK -> NEAREST PROFILE POINT
+========================================================= */
+
+map.on("click",e=>{
+
+  if(profile.length === 0){
+    return;
+  }
+
+  let nearest = 0;
+  let best = Infinity;
+
+  profile.forEach((p,i)=>{
+
+    const d =
+      map.distance(
+        e.latlng,
+        [p.lat,p.lon]
+      );
+
+    if(d<best){
+      best=d;
+      nearest=i;
+    }
+
+  });
+
+  selectProfilePoint(nearest);
+
+});
+
+
+/* =========================================================
+   PROFILE DIRECTION AFTER CALCULATION
+========================================================= */
+
+function drawDirectionForProfile(){
+
+  if(
+    profile.length === 0 ||
+    profileLat === null ||
+    profileLon === null ||
+    profileHeading === null
+  ){
+    return;
+  }
+
+  clearDirectionLayers();
+
+  const end =
+    profile[profile.length-1];
+
+  const left =
+    destinationPoint(
+      profileLat,
+      profileLon,
+      profileHeading-sectorWidth/2,
+      selectedMeters
+    );
+
+  const right =
+    destinationPoint(
+      profileLat,
+      profileLon,
+      profileHeading+sectorWidth/2,
+      selectedMeters
+    );
+
+  routeLine =
+    L.polyline(
+      [
+        [profileLat,profileLon],
+        [end.lat,end.lon]
+      ],
+      {
+        color:"#00eaff",
+        weight:4,
+        opacity:.9
+      }
+    ).addTo(map);
+
+  leftSectorLine =
+    L.polyline(
+      [
+        [profileLat,profileLon],
+        [left.lat,left.lon]
+      ],
+      {
+        color:"#00eaff",
+        weight:1,
+        dashArray:"6 7"
+      }
+    ).addTo(map);
+
+  rightSectorLine =
+    L.polyline(
+      [
+        [profileLat,profileLon],
+        [right.lat,right.lon]
+      ],
+      {
+        color:"#00eaff",
+        weight:1,
+        dashArray:"6 7"
+      }
+    ).addTo(map);
+
+  sectorPolygon =
+    L.polygon(
+      [
+        [profileLat,profileLon],
+        [left.lat,left.lon],
+        [right.lat,right.lon]
+      ],
+      {
+        color:"#00eaff",
+        fillColor:"#00eaff",
+        fillOpacity:.06,
+        weight:1
+      }
+    ).addTo(map);
+
+  if(startMarker){
+    map.removeLayer(startMarker);
+  }
+
+  if(endMarker){
+    map.removeLayer(endMarker);
+  }
+
+  startMarker =
+    L.marker(
+      [profileLat,profileLon]
+    )
+    .addTo(map)
+    .bindPopup("🟢 Початок профілю");
+
+  endMarker =
+    L.marker(
+      [end.lat,end.lon]
+    )
+    .addTo(map)
+    .bindPopup("🔴 Кінець профілю");
+
+  const bounds =
+    L.latLngBounds([
+      [profileLat,profileLon],
+      [end.lat,end.lon],
+      [left.lat,left.lon],
+      [right.lat,right.lon]
+    ]);
+
+  map.fitBounds(
+    bounds.pad(.18),
+    {
+      maxZoom:16
+    }
+  );
+
+}
+
+
+/* =========================================================
+   INITIAL GPS
+========================================================= */
+
+window.addEventListener("load",()=>{
+
+  /*
+    Do not automatically ask for permission on page load.
+    The sensor button is used because iOS requires
+    a user gesture for compass permission.
+  */
+
+  $("sensorStatus").innerHTML =
+    "Готово. Натисни «УВІМКНУТИ GPS + КОМПАС».";
+
+});
+
+
+/* =========================================================
+   RESIZE MAP
+========================================================= */
+
+setTimeout(()=>{
+  map.invalidateSize();
+},500);
+
+window.addEventListener("resize",()=>{
+  map.invalidateSize();
+});
+
+</script>
+
+</body>
+</html>
