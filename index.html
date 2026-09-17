@@ -2,155 +2,95 @@
 <html lang="uk">
 <head>
 <meta charset="utf-8">
-<meta name="viewport"
-      content="width=device-width,initial-scale=1,viewport-fit=cover">
-
-<meta name="theme-color" content="#06101d">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#06111d">
+<meta name="apple-mobile-web-app-capable" content="yes">
 
 <title>ПРОФІЛЬ РЕЛЬЄФУ PRO</title>
 
 <link rel="stylesheet"
-      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+ href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+ crossorigin="">
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+ crossorigin=""></script>
 
 <style>
 :root{
-  --bg:#06101d;
-  --panel:#0b1727;
-  --panel2:#0f2135;
-  --line:#1b3954;
-  --text:#eaf8ff;
-  --muted:#88a4b9;
-  --cyan:#00eaff;
-  --blue:#208cff;
-  --green:#24efa0;
-  --yellow:#ffd34e;
-  --red:#ff5874;
+  --bg:#06111d;
+  --panel:#0b1a29;
+  --panel2:#0e2234;
+  --line:#1b4058;
+  --text:#e8f4ff;
+  --muted:#8faabd;
+  --accent:#35d7ff;
+  --accent2:#65ffb3;
+  --warn:#ffd166;
+  --danger:#ff6b7a;
+  --shadow:0 10px 28px rgba(0,0,0,.34);
 }
 
 *{
   box-sizing:border-box;
+  -webkit-tap-highlight-color:transparent;
 }
 
-html,
-body{
+html,body{
   margin:0;
-  width:100%;
-  height:100%;
-  overflow:hidden;
-  background:var(--bg);
+  padding:0;
+  background:
+    radial-gradient(circle at 20% 0%,rgba(53,215,255,.06),transparent 28%),
+    radial-gradient(circle at 90% 100%,rgba(101,255,179,.04),transparent 30%),
+    var(--bg);
   color:var(--text);
-  font-family:
-    Inter,
-    system-ui,
-    -apple-system,
-    BlinkMacSystemFont,
-    "Segoe UI",
-    sans-serif;
+  font-family:Inter,Arial,sans-serif;
 }
 
-button,
-input,
-select{
+body{
+  min-height:100vh;
+}
+
+button,input,select{
   font:inherit;
 }
 
 button{
   cursor:pointer;
+  -webkit-user-select:none;
+  user-select:none;
 }
 
 /* =========================================================
-   LOCK
+   НЕОНОВИЙ ФОН
 ========================================================= */
 
-#lock{
+body:before{
+  content:"";
   position:fixed;
-  inset:0;
-  z-index:99999;
-  display:flex;
-  align-items:center;
-  justify-content:center;
+  inset:-30%;
+  pointer-events:none;
   background:
-    radial-gradient(
-      circle at 50% 40%,
-      #143653 0,
-      #071524 42%,
-      #020812 100%
-    );
+    radial-gradient(circle,rgba(53,215,255,.035),transparent 28%),
+    radial-gradient(circle at 80% 20%,rgba(101,255,179,.025),transparent 24%);
+  animation:bgPulse 9s ease-in-out infinite alternate;
+  z-index:-1;
 }
 
-.lockBox{
-  width:min(90%,390px);
-  padding:30px;
-  border:1px solid rgba(0,234,255,.3);
-  border-radius:24px;
-  background:rgba(7,20,35,.95);
-  box-shadow:
-    0 0 60px rgba(0,234,255,.12),
-    inset 0 0 35px rgba(0,234,255,.03);
-  text-align:center;
+@keyframes bgPulse{
+  from{
+    transform:translate3d(-2%,0,0) scale(1);
+    opacity:.55;
+  }
+  to{
+    transform:translate3d(2%,1%,0) scale(1.04);
+    opacity:1;
+  }
 }
 
-.lockIcon{
-  font-size:42px;
-  margin-bottom:8px;
-}
-
-.lockTitle{
-  font-size:20px;
-  font-weight:900;
-  letter-spacing:.7px;
-}
-
-.lockSub{
-  color:var(--muted);
-  font-size:12px;
-  margin:8px 0 20px;
-}
-
-#password{
-  width:100%;
-  padding:14px;
-  border-radius:13px;
-  border:1px solid var(--line);
-  outline:none;
-  background:#071321;
-  color:white;
-  text-align:center;
-  letter-spacing:5px;
-}
-
-#password:focus{
-  border-color:var(--cyan);
-  box-shadow:0 0 18px rgba(0,234,255,.12);
-}
-
-.unlock{
-  width:100%;
-  margin-top:12px;
-  padding:14px;
-  border:0;
-  border-radius:13px;
-  background:linear-gradient(135deg,#00d4ea,#167cff);
-  color:#001019;
-  font-weight:900;
-}
-
-#lockMsg{
-  min-height:18px;
-  margin-top:9px;
-  color:var(--red);
-  font-size:11px;
-}
-
-/* =========================================================
-   APP
-========================================================= */
-
-#app{
-  display:none;
-  position:relative;
-  width:100%;
-  height:100%;
+.app{
+  max-width:1450px;
+  margin:auto;
+  padding:7px;
 }
 
 /* =========================================================
@@ -158,572 +98,723 @@ button{
 ========================================================= */
 
 header{
-  position:absolute;
-  z-index:2000;
-  top:0;
-  left:0;
-  right:0;
-  height:60px;
-
   display:flex;
   align-items:center;
-
-  padding:8px 12px;
-
-  background:rgba(4,13,24,.94);
-  backdrop-filter:blur(14px);
-
-  border-bottom:1px solid rgba(0,234,255,.16);
+  justify-content:space-between;
+  gap:7px;
+  padding:8px 10px;
+  margin-bottom:6px;
+  background:linear-gradient(145deg,#0d2133,#081623);
+  border:1px solid var(--line);
+  border-radius:11px;
+  box-shadow:var(--shadow),0 0 18px rgba(53,215,255,.035);
+  position:relative;
+  overflow:hidden;
 }
 
-.brand{
-  font-size:15px;
-  font-weight:950;
-  letter-spacing:.7px;
+header:after,
+.panel:after,
+.section:after{
+  content:"";
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+  border-radius:inherit;
+  background:linear-gradient(
+    110deg,
+    transparent 0%,
+    rgba(53,215,255,.025) 45%,
+    rgba(101,255,179,.04) 50%,
+    transparent 60%
+  );
+  background-size:250% 100%;
+  animation:panelSweep 8s linear infinite;
 }
 
-.brand span{
-  color:var(--cyan);
+@keyframes panelSweep{
+  0%{background-position:200% 0}
+  100%{background-position:-50% 0}
 }
 
-.badges{
-  margin-left:auto;
+.logo{
+  font-weight:900;
+  letter-spacing:.3px;
+  font-size:14px;
+}
+
+.logo small{
+  display:block;
+  color:var(--muted);
+  font-size:10px;
+  font-weight:500;
+  margin-top:2px;
+}
+
+.status{
   display:flex;
-  gap:6px;
+  gap:4px;
+  flex-wrap:wrap;
+  justify-content:flex-end;
 }
 
 .badge{
-  padding:6px 9px;
-  border-radius:999px;
   border:1px solid var(--line);
-  color:var(--muted);
+  background:#081824;
+  border-radius:999px;
+  padding:4px 7px;
   font-size:10px;
   white-space:nowrap;
+  box-shadow:0 0 8px rgba(53,215,255,.025);
 }
 
-.badge.ok{
-  color:var(--green);
-  border-color:rgba(36,239,160,.35);
+.badge.ok{color:var(--accent2)}
+.badge.warn{color:var(--warn)}
+.badge.err{color:var(--danger)}
+
+/* =========================================================
+   NAV
+========================================================= */
+
+nav{
+  display:flex;
+  gap:4px;
+  overflow-x:auto;
+  overflow-y:hidden;
+  padding:0 0 5px;
+  margin-bottom:6px;
+  scrollbar-width:none;
 }
 
-.badge.warn{
-  color:var(--yellow);
-  border-color:rgba(255,211,78,.35);
+nav::-webkit-scrollbar{
+  display:none;
+}
+
+nav button{
+  border:1px solid var(--line);
+  background:#091a29;
+  color:var(--muted);
+  border-radius:7px;
+  padding:6px 8px;
+  font-size:11px;
+  white-space:nowrap;
+  position:relative;
+  overflow:hidden;
+}
+
+nav button.active{
+  color:var(--text);
+  border-color:#287995;
+  background:#102d40;
+  box-shadow:0 0 10px rgba(53,215,255,.08);
+}
+
+/* =========================================================
+   GRID
+========================================================= */
+
+.grid{
+  display:grid;
+  grid-template-columns:370px minmax(0,1fr);
+  gap:6px;
+}
+
+.panel{
+  background:linear-gradient(145deg,#0b1a29,#081521);
+  border:1px solid var(--line);
+  border-radius:11px;
+  padding:7px;
+  box-shadow:var(--shadow);
+  position:relative;
+  overflow:hidden;
+}
+
+/* =========================================================
+   SECTIONS
+========================================================= */
+
+.section{
+  border:1px solid #17374b;
+  background:rgba(8,23,36,.72);
+  border-radius:9px;
+  padding:7px;
+  margin-bottom:6px;
+  position:relative;
+  overflow:hidden;
+}
+
+.section h3{
+  margin:0 0 6px;
+  font-size:12px;
+}
+
+.row{
+  display:flex;
+  gap:5px;
+  align-items:center;
+  margin-bottom:5px;
+}
+
+.row>*{
+  min-width:0;
+}
+
+.row label{
+  display:flex;
+  gap:5px;
+  align-items:center;
+  font-size:10px;
+  color:var(--muted);
+}
+
+input,select{
+  width:100%;
+  border:1px solid #1c465d;
+  background:#071521;
+  color:var(--text);
+  border-radius:7px;
+  padding:6px 7px;
+  outline:none;
+  font-size:11px;
+  min-height:31px;
+}
+
+input[type="checkbox"]{
+  width:auto;
+  min-height:auto;
+  accent-color:var(--accent);
+}
+
+input:focus,select:focus{
+  border-color:var(--accent);
+  box-shadow:0 0 9px rgba(53,215,255,.08);
+}
+
+/* =========================================================
+   BUTTONS
+========================================================= */
+
+button.primary,
+button.secondary,
+button.danger{
+  border-radius:7px;
+  padding:6px 8px;
+  min-height:31px;
+  border:1px solid #236b84;
+  color:var(--text);
+  background:#103246;
+  font-size:11px;
+  position:relative;
+  overflow:hidden;
+  transition:
+    transform .12s ease,
+    box-shadow .2s ease,
+    border-color .2s ease;
+}
+
+button.primary{
+  background:linear-gradient(135deg,#0d6d86,#11435b);
+  box-shadow:0 0 9px rgba(53,215,255,.05);
+}
+
+button.secondary{
+  background:#0a2231;
+}
+
+button.danger{
+  border-color:#713944;
+  background:#29151b;
+  color:#ff9aa5;
+}
+
+button:hover{
+  border-color:#35d7ff;
+  box-shadow:0 0 12px rgba(53,215,255,.1);
+}
+
+button:active{
+  transform:scale(.97);
+}
+
+/* світловий імпульс */
+button.neon-click:after{
+  content:"";
+  position:absolute;
+  top:-60%;
+  left:-35%;
+  width:25%;
+  height:220%;
+  background:linear-gradient(
+    90deg,
+    transparent,
+    rgba(255,255,255,.75),
+    transparent
+  );
+  transform:skewX(-18deg);
+  animation:buttonSweep .42s ease-out;
+}
+
+@keyframes buttonSweep{
+  from{left:-35%}
+  to{left:125%}
+}
+
+.full{
+  width:100%;
+}
+
+.mode{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+}
+
+.mode button{
+  padding:6px 4px;
+  min-height:29px;
+  font-size:10px;
+  border-radius:7px;
+  border:1px solid var(--line);
+  background:#081a28;
+  color:var(--muted);
+}
+
+.mode button.active{
+  background:#103b4f;
+  color:var(--accent);
+  border-color:#287e9b;
+}
+
+/* =========================================================
+   KPI
+========================================================= */
+
+.kpis{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:4px;
+}
+
+.kpi{
+  background:#071622;
+  border:1px solid #17394d;
+  border-radius:7px;
+  padding:6px;
+  min-height:45px;
+}
+
+.kpi span{
+  display:block;
+  color:var(--muted);
+  font-size:9px;
+}
+
+.kpi strong{
+  display:block;
+  margin-top:2px;
+  font-size:12px;
+}
+
+.note{
+  color:var(--muted);
+  font-size:10px;
+  line-height:1.35;
 }
 
 /* =========================================================
    MAP
 ========================================================= */
 
-#map{
-  position:absolute;
-  z-index:1;
-  inset:60px 0 0 0;
-  background:#07121e;
-}
-
-.leaflet-control-layers,
-.leaflet-control-zoom,
-.leaflet-control-attribution{
-  filter:brightness(.88);
-}
-
-/* =========================================================
-   SIDEBAR
-========================================================= */
-
-.sidebar{
-  position:absolute;
-  z-index:1500;
-
-  top:72px;
-  left:12px;
-
-  width:355px;
-  max-height:calc(100% - 84px);
-
-  overflow:auto;
-
-  padding:11px;
-
-  border:1px solid rgba(0,234,255,.2);
-  border-radius:20px;
-
-  background:rgba(5,16,29,.94);
-  backdrop-filter:blur(15px);
-
-  box-shadow:
-    0 0 30px rgba(0,0,0,.25);
-}
-
-.card{
-  padding:12px;
-  margin-bottom:9px;
-
-  border:1px solid var(--line);
-  border-radius:15px;
-
-  background:
-    linear-gradient(
-      145deg,
-      rgba(14,31,50,.95),
-      rgba(5,16,29,.95)
-    );
-}
-
-.card:last-child{
-  margin-bottom:0;
-}
-
-.title{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-
-  margin-bottom:9px;
-
-  font-size:12px;
-  font-weight:900;
-}
-
-.title small{
-  color:var(--muted);
-  font-weight:500;
-}
-
-.row{
-  display:flex;
-  gap:7px;
-  margin-bottom:7px;
-}
-
-.row:last-child{
-  margin-bottom:0;
-}
-
-.field{
-  flex:1;
-}
-
-label{
-  display:block;
-  margin-bottom:4px;
-  color:var(--muted);
-  font-size:10px;
-}
-
-select,
-input{
-  width:100%;
-  padding:10px;
-
-  border:1px solid #1b3a56;
-  border-radius:10px;
-
-  outline:none;
-
-  background:#071321;
-  color:white;
-}
-
-select:focus,
-input:focus{
-  border-color:var(--cyan);
-}
-
-.action{
-  flex:1;
-
-  padding:11px 8px;
-
-  border:1px solid #1b405e;
-  border-radius:11px;
-
-  background:#0b1d31;
-  color:var(--text);
-
-  font-size:11px;
-  font-weight:900;
-}
-
-.action:hover{
-  border-color:var(--cyan);
-}
-
-.primary{
-  border:0;
-  background:linear-gradient(135deg,#00cfe9,#167cff);
-  color:#00121a;
-}
-
-.green{
-  color:var(--green);
-  border-color:rgba(36,239,160,.35);
-}
-
-.red{
-  color:#ff6a82;
-  border-color:rgba(255,88,116,.35);
-}
-
-.status{
-  min-height:38px;
-
-  padding:9px;
-
-  border:1px solid #17344d;
-  border-radius:10px;
-
-  background:#061321;
-
-  color:var(--muted);
-
-  font-size:10px;
-  line-height:1.45;
-}
-
-.status.active{
-  color:var(--cyan);
-  border-color:rgba(0,234,255,.3);
-}
-
-.status.success{
-  color:var(--green);
-  border-color:rgba(36,239,160,.3);
-}
-
-.status.error{
-  color:var(--red);
-  border-color:rgba(255,88,116,.3);
-}
-
-.kpis{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:6px;
-}
-
-.kpi{
-  padding:9px;
-
-  border:1px solid #173149;
-  border-radius:10px;
-
-  background:#071523;
-}
-
-.kpiName{
-  color:var(--muted);
-  font-size:9px;
-}
-
-.kpiValue{
-  margin-top:3px;
-
-  font-size:14px;
-  font-weight:900;
-}
-
-/* =========================================================
-   PROFILE PANEL
-========================================================= */
-
-.profilePanel{
-  position:absolute;
-  z-index:1400;
-
-  left:382px;
-  right:12px;
-  bottom:12px;
-
-  height:300px;
-
-  display:flex;
-  flex-direction:column;
-
-  padding:10px;
-
-  border:1px solid rgba(0,234,255,.2);
-  border-radius:20px;
-
-  background:rgba(4,14,26,.95);
-  backdrop-filter:blur(14px);
-}
-
-.profileHeader{
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-
-  margin-bottom:7px;
-}
-
-.profileHeader strong{
-  font-size:13px;
-}
-
-.profileHeader span{
-  color:var(--muted);
-  font-size:10px;
-}
-
-.chartWrap{
+.mapWrap{
   position:relative;
+}
 
-  flex:1;
-
-  min-height:0;
-
-  border:1px solid #17344c;
-  border-radius:13px;
-
+#map{
+  height:620px;
+  min-height:420px;
+  border-radius:9px;
   overflow:hidden;
-
-  background:
-    linear-gradient(
-      rgba(0,234,255,.035) 1px,
-      transparent 1px
-    ),
-    linear-gradient(
-      90deg,
-      rgba(0,234,255,.035) 1px,
-      transparent 1px
-    ),
-    #061321;
-
-  background-size:40px 40px;
+  border:1px solid #1d4358;
+  box-shadow:
+    inset 0 0 25px rgba(0,0,0,.2),
+    0 0 15px rgba(53,215,255,.04);
 }
 
-#chart{
-  display:block;
+/* компактні Leaflet controls */
 
-  width:100%;
-  height:100%;
-
-  touch-action:none;
+.leaflet-control-zoom{
+  border:none!important;
+  box-shadow:none!important;
+  margin-top:48px!important;
+  margin-left:6px!important;
 }
 
-.legend{
+.leaflet-control-zoom a{
+  width:29px!important;
+  height:29px!important;
+  line-height:27px!important;
+  font-size:17px!important;
+  background:rgba(5,16,26,.9)!important;
+  color:#dcefff!important;
+  border:1px solid #24546b!important;
+}
+
+.leaflet-control-layers{
+  background:rgba(5,16,26,.94)!important;
+  color:#fff;
+  border:1px solid #24546b!important;
+  border-radius:7px!important;
+  box-shadow:0 5px 15px rgba(0,0,0,.3)!important;
+}
+
+.leaflet-control-layers-toggle{
+  width:31px!important;
+  height:31px!important;
+  background-size:18px 18px!important;
+}
+
+.leaflet-control-layers-expanded{
+  padding:6px!important;
+  font-size:10px!important;
+  line-height:1.6!important;
+}
+
+.leaflet-control-layers label{
+  font-size:10px!important;
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip{
+  background:#091a28;
+  color:#e8f4ff;
+}
+
+.leaflet-popup-content{
+  margin:8px!important;
+  font-size:11px;
+}
+
+/* HUD */
+
+.mapHud{
   position:absolute;
-  top:7px;
-  left:9px;
-
-  color:var(--muted);
-  font-size:9px;
-
+  z-index:500;
+  left:6px;
+  right:6px;
+  top:6px;
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
   pointer-events:none;
 }
 
-.chartInfo{
-  position:absolute;
-  top:7px;
-  right:8px;
+.hudGroup{
+  display:flex;
+  gap:4px;
+  flex-wrap:wrap;
+}
 
-  padding:6px 8px;
+.hud{
+  pointer-events:auto;
+  background:rgba(5,16,26,.88);
+  border:1px solid #24546b;
+  backdrop-filter:blur(7px);
+  border-radius:7px;
+  padding:5px 7px;
+  font-size:10px;
+  box-shadow:0 4px 12px rgba(0,0,0,.2);
+}
 
-  border:1px solid rgba(0,234,255,.2);
-  border-radius:8px;
-
-  background:rgba(3,12,22,.86);
-
-  color:#dffaff;
-
-  font-size:9px;
-
-  pointer-events:none;
+.hud strong{
+  color:var(--accent);
 }
 
 /* =========================================================
-   TABLE
+   PROFILE
 ========================================================= */
 
-#table{
-  max-height:0;
-  overflow:auto;
+.profile{
+  margin-top:6px;
 }
 
-#table table{
+.profile svg{
   width:100%;
-  border-collapse:collapse;
-
-  font-size:9px;
+  height:285px;
+  display:block;
+  background:#06131f;
+  border:1px solid #18384b;
+  border-radius:8px;
+  cursor:crosshair;
+  box-shadow:0 0 15px rgba(53,215,255,.04);
 }
 
-#table th,
-#table td{
-  padding:5px;
+table{
+  width:100%;
+  min-width:520px;
+  border-collapse:collapse;
+  font-size:10px;
+}
 
-  border-bottom:1px solid #102a40;
-
+th,td{
+  padding:4px;
+  border-bottom:1px solid #163346;
   text-align:right;
 }
 
-#table th:first-child,
-#table td:first-child{
+th:first-child,td:first-child{
   text-align:left;
 }
 
-#table th{
-  position:sticky;
-  top:0;
-
-  background:#071625;
-
-  color:var(--muted);
+.scroll{
+  overflow:auto;
+  max-height:290px;
 }
 
-#table tr.selected{
-  background:rgba(0,234,255,.1);
-  color:var(--cyan);
+.hidden{
+  display:none!important;
 }
 
 /* =========================================================
-   NORTH BUTTON
+   КОМПАС
 ========================================================= */
 
-#northBtn{
+.compass{
+  width:190px;
+  height:190px;
+  margin:8px auto;
+  border-radius:50%;
+  border:1px solid #23516a;
+  background:
+    radial-gradient(circle,#102c3d 0 39%,#071724 40% 67%,#0c2130 68%),
+    #071724;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  box-shadow:
+    0 0 18px rgba(53,215,255,.08),
+    inset 0 0 22px rgba(53,215,255,.05);
+  overflow:hidden;
+}
+
+/* зовнішня шкала */
+.compassScale{
   position:absolute;
-  z-index:1600;
+  inset:7px;
+  border-radius:50%;
+}
 
-  top:72px;
-  right:12px;
+.tick{
+  position:absolute;
+  left:50%;
+  top:50%;
+  width:1px;
+  height:6px;
+  background:#6f9aae;
+  transform-origin:50% 88px;
+}
 
-  padding:10px 13px;
+.tick.major{
+  height:10px;
+  width:2px;
+  background:#d7efff;
+}
 
-  border:1px solid rgba(0,234,255,.25);
-  border-radius:11px;
+.tick.cardinal{
+  height:13px;
+  width:2px;
+  background:var(--accent);
+  box-shadow:0 0 5px var(--accent);
+}
 
-  background:rgba(5,15,27,.9);
+.compassLabels{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
 
-  color:var(--cyan);
-
+.compassLabel{
+  position:absolute;
+  left:50%;
+  top:50%;
   font-size:11px;
-  font-weight:900;
+  font-weight:800;
+  transform-origin:0 0;
+}
+
+.compassLabel.north{
+  color:#ff6878;
+}
+
+.compassLabel.other{
+  color:#d9f2ff;
+}
+
+.compass .northDot{
+  position:absolute;
+  top:11px;
+  width:5px;
+  height:5px;
+  border-radius:50%;
+  background:#ff6878;
+  box-shadow:0 0 8px #ff6878;
+}
+
+.compassArrow{
+  width:3px;
+  height:66px;
+  background:var(--accent);
+  transform-origin:50% 80%;
+  box-shadow:0 0 13px var(--accent);
+  position:relative;
+  z-index:5;
+  transition:transform .16s cubic-bezier(.22,.61,.36,1);
+}
+
+.compassArrow:after{
+  content:"";
+  position:absolute;
+  top:-8px;
+  left:-5px;
+  border-left:6px solid transparent;
+  border-right:6px solid transparent;
+  border-bottom:12px solid var(--accent);
+}
+
+.compassCenter{
+  position:absolute;
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#eaffff;
+  border:2px solid #06131f;
+  box-shadow:0 0 10px var(--accent);
+  z-index:10;
 }
 
 /* =========================================================
-   MAP MARKERS
+   LOCK
 ========================================================= */
 
-.startMarker{
-  width:18px;
-  height:18px;
-
-  border-radius:50%;
-
-  background:#24efa0;
-
-  border:3px solid white;
-
-  box-shadow:
-    0 0 18px rgba(36,239,160,.85);
+.lock{
+  position:fixed;
+  inset:0;
+  z-index:9999;
+  background:#030a11;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:15px;
 }
 
-.profileDot{
-  width:12px;
-  height:12px;
-
-  border-radius:50%;
-
-  background:#00eaff;
-
-  border:2px solid #001923;
-
-  box-shadow:
-    0 0 10px rgba(0,234,255,.8);
+.lockBox{
+  width:min(330px,100%);
+  padding:18px;
+  background:#0b1a29;
+  border:1px solid #1d5069;
+  border-radius:13px;
+  box-shadow:0 20px 70px #000,0 0 30px rgba(53,215,255,.05);
+  text-align:center;
 }
 
-.profileDot.selected{
-  width:20px;
-  height:20px;
+.lockBox h2{
+  margin-top:0;
+  font-size:18px;
+}
 
-  margin-left:-4px;
-  margin-top:-4px;
-
-  background:#ffd34e;
-
-  border:2px solid white;
-
-  box-shadow:
-    0 0 9px white,
-    0 0 24px rgba(255,211,78,.9);
+.error{
+  color:#ff8794;
+  font-size:10px;
+  margin-top:5px;
 }
 
 /* =========================================================
-   MOBILE
+   FOOTER
 ========================================================= */
 
-@media(max-width:900px){
-
-  .sidebar{
-    top:auto;
-    bottom:10px;
-    left:10px;
-
-    width:calc(100% - 20px);
-
-    max-height:42%;
-  }
-
-  .profilePanel{
-    left:10px;
-    right:10px;
-
-    bottom:calc(42% + 18px);
-
-    height:270px;
-  }
+footer{
+  text-align:center;
+  color:#688497;
+  font-size:9px;
+  padding:10px 5px 4px;
+  line-height:1.6;
 }
 
-@media(max-width:600px){
+/* =========================================================
+   RESPONSIVE
+========================================================= */
 
-  header{
-    height:55px;
-    padding:7px 9px;
+@media(max-width:850px){
+
+  .grid{
+    grid-template-columns:1fr;
   }
 
-  .brand{
-    font-size:11px;
-  }
-
-  .badge{
-    padding:5px 6px;
-    font-size:8px;
+  .left{
+    order:2;
   }
 
   #map{
-    inset:55px 0 0 0;
+    height:57vh;
+    min-height:390px;
   }
 
-  .sidebar{
-    left:7px;
-    bottom:7px;
-
-    width:calc(100% - 14px);
-
-    max-height:40%;
-
-    padding:8px;
-
-    border-radius:15px;
+  .panel{
+    padding:6px;
   }
 
-  .profilePanel{
-    left:7px;
-    right:7px;
+  .section{
+    padding:6px;
+  }
+}
 
-    bottom:calc(40% + 14px);
+@media(max-width:520px){
 
-    height:235px;
-
-    padding:8px;
-
-    border-radius:15px;
+  .app{
+    padding:4px;
   }
 
-  #northBtn{
-    top:63px;
-    right:7px;
+  header{
+    padding:7px;
+  }
+
+  .logo{
+    font-size:12px;
+  }
+
+  .logo small{
+    font-size:9px;
+  }
+
+  .status{
+    max-width:150px;
+  }
+
+  .badge{
+    font-size:9px;
+    padding:3px 5px;
+  }
+
+  nav button{
+    padding:5px 7px;
+    font-size:10px;
+  }
+
+  #map{
+    height:59vh;
+    min-height:380px;
+  }
+
+  .compass{
+    width:180px;
+    height:180px;
+  }
+
+  .tick{
+    transform-origin:50% 83px;
+  }
+
+  .leaflet-control-zoom{
+    margin-top:43px!important;
   }
 }
 </style>
@@ -731,326 +822,128 @@ input:focus{
 
 <body>
 
-<!-- ======================================================
-     LOCK
-====================================================== -->
-
-<div id="lock">
-
+<div class="lock" id="lock">
   <div class="lockBox">
+    <h2>🗺️ ПРОФІЛЬ РЕЛЬЄФУ PRO</h2>
+    <p class="note">Захищений доступ</p>
 
-    <div class="lockIcon">⛰️</div>
+    <input id="password"
+           type="password"
+           inputmode="numeric"
+           placeholder="Введіть пароль">
 
-    <div class="lockTitle">
-      ПРОФІЛЬ РЕЛЬЄФУ PRO
-    </div>
+    <br><br>
 
-    <div class="lockSub">
-      GPS • КОМПАС • КАРТА • ВИСОТИ
-    </div>
-
-    <input
-      id="password"
-      type="password"
-      inputmode="numeric"
-      maxlength="20"
-      placeholder="КОД ДОСТУПУ">
-
-    <button
-      class="unlock"
-      id="unlockBtn">
-      УВІЙТИ
+    <button class="primary full" onclick="login()">
+      Увійти
     </button>
 
-    <div id="lockMsg"></div>
-
+    <div id="loginError" class="error"></div>
   </div>
-
 </div>
 
 
-<!-- ======================================================
-     APP
-====================================================== -->
-
-<div id="app">
+<div class="app">
 
 <header>
 
-  <div class="brand">
-    ⛰️ ПРОФІЛЬ
-    <span>РЕЛЬЄФУ PRO</span>
+  <div class="logo">
+    🗺️ ПРОФІЛЬ РЕЛЬЄФУ PRO
+    <small>
+      Живий напрямок телефона • GPS • рельєф • LOS/Френель
+    </small>
   </div>
 
-  <div class="badges">
-
-    <div
-      class="badge"
-      id="gpsBadge">
-      GPS • очікування
+  <div class="status">
+    <div class="badge" id="gpsBadge">
+      GPS: —
     </div>
 
-    <div
-      class="badge"
-      id="compassBadge">
+    <div class="badge" id="compassBadge">
       🧭 —
     </div>
-
   </div>
 
 </header>
 
 
-<div id="map"></div>
+<nav>
+
+  <button class="active"
+          onclick="showTab('mapTab',this)">
+    🗺️ Карта
+  </button>
+
+  <button onclick="showTab('profileTab',this)">
+    📈 Профіль
+  </button>
+
+  <button onclick="showTab('compassTab',this)">
+    🧭 Компас
+  </button>
+
+  <button onclick="showTab('networkTab',this)">
+    📶 Мережа
+  </button>
+
+  <button onclick="showTab('savedTab',this)">
+    💾 Збережені
+  </button>
+
+</nav>
 
 
-<button id="northBtn">
-  ↑ ПІВНІЧ
-</button>
+<div class="grid">
 
 
 <!-- ======================================================
-     SIDEBAR
+     ЛІВА ПАНЕЛЬ
 ====================================================== -->
 
-<div class="sidebar">
-
-
-  <!-- DIRECTION -->
-
-  <div class="card">
-
-    <div class="title">
-      НАПРЯМОК
-
-      <small id="headingText">
-        —
-      </small>
-    </div>
-
-    <div class="kpis">
-
-      <div class="kpi">
-        <div class="kpiName">
-          Курс
-        </div>
-
-        <div
-          class="kpiValue"
-          id="headingValue">
-          —°
-        </div>
-      </div>
-
-      <div class="kpi">
-        <div class="kpiName">
-          Напрямок
-        </div>
-
-        <div
-          class="kpiValue"
-          id="directionValue">
-          —
-        </div>
-      </div>
-
-    </div>
-
-    <div
-      class="row"
-      style="margin-top:7px">
-
-      <button
-        class="action primary"
-        id="compassBtn">
-        🧭 УВІМКНУТИ КОМПАС
-      </button>
-
-      <button
-        class="action"
-        id="northMapBtn">
-        ↑ ПІВНІЧ
-      </button>
-
-    </div>
-
-  </div>
-
-
-  <!-- PARAMETERS -->
-
-  <div class="card">
-
-    <div class="title">
-      ПАРАМЕТРИ ПРОФІЛЮ
-      <small>ручний запуск</small>
-    </div>
-
-    <div class="row">
-
-      <div class="field">
-
-        <label>
-          Дистанція
-        </label>
-
-        <select id="distance">
-
-          <option value="100">
-            100 м
-          </option>
-
-          <option value="250">
-            250 м
-          </option>
-
-          <option
-            value="500"
-            selected>
-            500 м
-          </option>
-
-          <option value="1000">
-            1 км
-          </option>
-
-          <option value="2000">
-            2 км
-          </option>
-
-          <option value="5000">
-            5 км
-          </option>
-
-          <option value="10000">
-            10 км
-          </option>
-
-        </select>
-
-      </div>
-
-
-      <div class="field">
-
-        <label>
-          Точок
-        </label>
-
-        <select id="pointsCount">
-
-          <option value="21">
-            21
-          </option>
-
-          <option
-            value="31"
-            selected>
-            31
-          </option>
-
-          <option value="41">
-            41
-          </option>
-
-          <option value="61">
-            61
-          </option>
-
-          <option value="81">
-            81
-          </option>
-
-        </select>
-
-      </div>
-
-    </div>
-
-
-    <div class="row">
-
-      <button
-        class="action primary"
-        id="calculateBtn">
-        📈 ПОБУДУВАТИ ПРОФІЛЬ
-      </button>
-
-      <button
-        class="action red"
-        id="clearBtn">
-        ОЧИСТИТИ
-      </button>
-
-    </div>
-
-
-    <div
-      class="status"
-      id="status">
-      Натисни «ПОБУДУВАТИ ПРОФІЛЬ».
-    </div>
-
-  </div>
+<div class="left panel">
 
 
   <!-- GPS -->
 
-  <div class="card">
+  <div class="section">
 
-    <div class="title">
-      GPS
-      <small>стартова позиція</small>
+    <h3>📍 Моє положення</h3>
+
+    <div class="row">
+      <button class="primary full"
+              onclick="startGPS()">
+        📍 Моє місце
+      </button>
+    </div>
+
+    <div class="row">
+      <button class="secondary full"
+              id="gpsLiveBtn"
+              onclick="toggleGPSLive()">
+        GPS LIVE: ВИМК.
+      </button>
     </div>
 
     <div class="kpis">
 
       <div class="kpi">
-        <div class="kpiName">
-          Широта
-        </div>
-
-        <div
-          class="kpiValue"
-          id="latValue">
-          —
-        </div>
+        <span>Широта</span>
+        <strong id="lat">—</strong>
       </div>
 
       <div class="kpi">
-        <div class="kpiName">
-          Довгота
-        </div>
-
-        <div
-          class="kpiValue"
-          id="lonValue">
-          —
-        </div>
+        <span>Довгота</span>
+        <strong id="lon">—</strong>
       </div>
 
       <div class="kpi">
-        <div class="kpiName">
-          Точність
-        </div>
-
-        <div
-          class="kpiValue"
-          id="accuracyValue">
-          —
-        </div>
+        <span>Точність</span>
+        <strong id="accuracy">—</strong>
       </div>
 
       <div class="kpi">
-        <div class="kpiName">
-          GPS висота
-        </div>
-
-        <div
-          class="kpiValue"
-          id="gpsAltValue">
-          —
-        </div>
+        <span>GPS-висота</span>
+        <strong id="gpsAlt">—</strong>
       </div>
 
     </div>
@@ -1058,87 +951,248 @@ input:focus{
   </div>
 
 
-  <!-- RESULTS -->
+  <!-- DIRECTION -->
 
-  <div class="card">
+  <div class="section">
 
-    <div class="title">
-      РЕЗУЛЬТАТ
-      <small>висоти</small>
+    <h3>🧭 Джерело напрямку</h3>
+
+    <div class="mode">
+
+      <button id="phoneMode"
+              class="active"
+              onclick="setDirectionMode('phone')">
+        🧭 Телефон
+      </button>
+
+      <button id="abMode"
+              onclick="setDirectionMode('ab')">
+        📍 A → B
+      </button>
+
+    </div>
+
+    <p class="note" id="modeText">
+      Напрямок береться безпосередньо з компаса телефона.
+      Поверніть телефон — напрямок на карті зміниться.
+    </p>
+
+    <button class="primary full"
+            onclick="enableCompass()">
+      🧭 Увімкнути компас
+    </button>
+
+  </div>
+
+
+  <!-- PROFILE -->
+
+  <div class="section">
+
+    <h3>📏 Параметри профілю</h3>
+
+    <div class="row">
+
+      <select id="distance">
+        <option value="100">100 м</option>
+        <option value="500">500 м</option>
+        <option value="1000" selected>1 км</option>
+        <option value="5000">5 км</option>
+        <option value="10000">10 км</option>
+      </select>
+
+      <select id="points">
+        <option value="21">21 точка</option>
+        <option value="41" selected>41 точка</option>
+        <option value="61">61 точка</option>
+      </select>
+
+    </div>
+
+    <button class="primary full"
+            onclick="calculateProfile()">
+      📈 Розрахувати
+    </button>
+
+  </div>
+
+
+  <!-- RADIO -->
+
+  <div class="section">
+
+    <h3>📡 LOS / Зона Френеля</h3>
+
+    <div class="row">
+
+      <select id="freq">
+
+        <option value="900">
+          GSM 900 МГц
+        </option>
+
+        <option value="1800" selected>
+          GSM/LTE 1800 МГц
+        </option>
+
+        <option value="2100">
+          UMTS 2100 МГц
+        </option>
+
+        <option value="2600">
+          LTE 2600 МГц
+        </option>
+
+        <option value="3500">
+          5G NR 3500 МГц
+        </option>
+
+      </select>
+
+    </div>
+
+    <div class="row">
+
+      <input id="h1"
+             type="number"
+             step="0.1"
+             value="1.5"
+             placeholder="TX, м">
+
+      <input id="h2"
+             type="number"
+             step="0.1"
+             value="1.5"
+             placeholder="RX, м">
+
+    </div>
+
+    <div class="row">
+
+      <label>
+        <input id="showFresnel"
+               type="checkbox"
+               checked
+               onchange="recalcRadio()">
+
+        Френель
+      </label>
+
+    </div>
+
+    <button class="secondary full"
+            onclick="recalcRadio()">
+      ↻ Перерахувати
+    </button>
+
+    <div class="note"
+         id="losFullStatus"
+         style="margin-top:5px">
+    </div>
+
+  </div>
+
+
+  <!-- SEARCH -->
+
+  <div class="section">
+
+    <h3>🔎 Пошук місця</h3>
+
+    <div class="row">
+
+      <input id="searchInput"
+             placeholder="Львів, Київ, Карпати...">
+
+      <button class="secondary"
+              onclick="searchPlace()">
+        Знайти
+      </button>
+
+    </div>
+
+    <div id="searchResult"
+         class="note">
+    </div>
+
+  </div>
+
+
+  <!-- A B -->
+
+  <div class="section">
+
+    <h3>📍 Ручні точки A / B</h3>
+
+    <div class="row">
+
+      <button class="secondary full"
+              onclick="setPointMode('A')">
+        Поставити A
+      </button>
+
+      <button class="secondary full"
+              onclick="setPointMode('B')">
+        Поставити B
+      </button>
+
     </div>
 
     <div class="kpis">
 
       <div class="kpi">
-        <div class="kpiName">
-          Старт
-        </div>
-
-        <div
-          class="kpiValue"
-          id="startElev">
-          —
-        </div>
+        <span>A</span>
+        <strong id="pointA">—</strong>
       </div>
 
       <div class="kpi">
-        <div class="kpiName">
-          Кінець
-        </div>
-
-        <div
-          class="kpiValue"
-          id="endElev">
-          —
-        </div>
+        <span>B</span>
+        <strong id="pointB">—</strong>
       </div>
 
-      <div class="kpi">
-        <div class="kpiName">
-          Мінімум
-        </div>
+    </div>
 
-        <div
-          class="kpiValue"
-          id="minElev">
-          —
-        </div>
-      </div>
+    <button class="secondary full"
+            onclick="useAB()">
+      ↔️ Використати A → B
+    </button>
 
-      <div class="kpi">
-        <div class="kpiName">
-          Максимум
-        </div>
+  </div>
 
-        <div
-          class="kpiValue"
-          id="maxElev">
-          —
-        </div>
-      </div>
 
-      <div class="kpi">
-        <div class="kpiName">
-          Перепад кінця
-        </div>
+  <!-- ANTENNAS -->
 
-        <div
-          class="kpiValue"
-          id="endDiff">
-          —
-        </div>
-      </div>
+  <div class="section">
 
-      <div class="kpi">
-        <div class="kpiName">
-          Макс. перепад
-        </div>
+    <h3>📡 Мобільні антени</h3>
 
-        <div
-          class="kpiValue"
-          id="maxDiff">
-          —
-        </div>
+    <div class="row">
+
+      <button class="secondary full"
+              onclick="toggleAntennas()"
+              id="antennaBtn">
+        📡 Антени: УВІМК.
+      </button>
+
+    </div>
+
+    <button class="secondary full"
+            onclick="loadAntennas()">
+      ↻ Оновити
+    </button>
+
+    <div class="note"
+         id="antennaStatus"
+         style="margin-top:5px">
+      Завантаження...
+    </div>
+
+    <div class="scroll"
+         id="antennaListBox"
+         style="max-height:230px;margin-top:6px">
+
+      <div class="note">
+        Немає даних.
       </div>
 
     </div>
@@ -1146,58 +1200,43 @@ input:focus{
   </div>
 
 
-  <!-- SELECTED -->
+  <!-- STATUS -->
 
-  <div class="card">
+  <div class="section">
 
-    <div class="title">
-      ВИБРАНА ТОЧКА
-      <small>карта / графік</small>
-    </div>
+    <h3>📊 Поточний стан</h3>
 
-    <div
-      class="status"
-      id="selectedInfo">
-      Точка ще не вибрана.
-    </div>
+    <div class="kpis">
 
-  </div>
+      <div class="kpi">
+        <span>Азимут</span>
+        <strong id="bearing">—</strong>
+      </div>
 
+      <div class="kpi">
+        <span>Напрямок</span>
+        <strong id="bearingText">—</strong>
+      </div>
 
-  <div class="card">
+      <div class="kpi">
+        <span>Дистанція</span>
+        <strong id="profileDistance">—</strong>
+      </div>
 
-    <div class="title">
-      ЯК ПРАЦЮЄ
-    </div>
+      <div class="kpi">
+        <span>Точок</span>
+        <strong id="profilePoints">—</strong>
+      </div>
 
-    <div
-      style="
-        color:var(--muted);
-        font-size:10px;
-        line-height:1.5;
-      ">
+      <div class="kpi">
+        <span>LOS</span>
+        <strong id="losStatus">—</strong>
+      </div>
 
-      <b style="color:#dffaff">
-        1 дотик
-      </b>
-      по точці карти —
-      показує висоту та перепад.
-
-      <br>
-
-      <b style="color:#dffaff">
-        2 дотики
-      </b>
-      —
-      фокусує точку на графіку.
-
-      <br>
-
-      <b style="color:#dffaff">
-        Дотик по графіку
-      </b>
-      —
-      вибирає відповідну точку карти.
+      <div class="kpi">
+        <span>Френель</span>
+        <strong id="fresnelMin">—</strong>
+      </div>
 
     </div>
 
@@ -1207,413 +1246,1010 @@ input:focus{
 
 
 <!-- ======================================================
-     PROFILE PANEL
+     ПРАВА ПАНЕЛЬ
 ====================================================== -->
 
-<div class="profilePanel">
+<div class="panel">
 
-  <div class="profileHeader">
 
-    <strong>
-      📈 ПРОФІЛЬ ВИСОТИ
-    </strong>
+  <!-- MAP -->
 
-    <span id="chartSummary">
-      Немає профілю
-    </span>
+  <div id="mapTab">
+
+    <div class="mapWrap">
+
+      <div class="mapHud">
+
+        <div class="hudGroup">
+
+          <div class="hud">
+            🧭 <strong id="hudBearing">—</strong>
+          </div>
+
+          <div class="hud">
+            📐 <strong id="hudDirection">—</strong>
+          </div>
+
+        </div>
+
+        <div class="hud">
+          📡 <strong id="antennaCount">0</strong>
+        </div>
+
+      </div>
+
+      <div id="map"></div>
+
+    </div>
+
+    <div class="section"
+         style="margin-top:6px">
+
+      <div class="note">
+        <b>🧭 Напрямок:</b>
+        синій промінь показує напрямок телефона.
+        <br>
+        <b>⛰️ Рельєф:</b>
+        топографічний шар показує висотні області кольором.
+        <br>
+        <b>🛰️ Гібрид:</b>
+        супутникове зображення + дороги + назви.
+      </div>
+
+    </div>
 
   </div>
 
 
-  <div class="chartWrap">
+  <!-- PROFILE -->
 
-    <canvas id="chart"></canvas>
+  <div id="profileTab"
+       class="hidden">
 
-    <div class="legend">
-      Висота • м
+    <div class="section">
+
+      <h3>📈 Профіль рельєфу</h3>
+
+      <div class="kpis">
+
+        <div class="kpi">
+          <span>Мінімум</span>
+          <strong id="minElev">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Максимум</span>
+          <strong id="maxElev">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Перепад</span>
+          <strong id="reliefDiff">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Середня</span>
+          <strong id="avgElev">—</strong>
+        </div>
+
+      </div>
+
     </div>
 
-    <div
-      class="chartInfo"
-      id="chartInfo">
-      —
+    <div class="note"
+         id="pointInfo"
+         style="margin:5px 2px">
+
+      Натисніть на графік або точку маршруту.
+
+    </div>
+
+    <div class="profile">
+
+      <svg id="profileSvg"
+           viewBox="0 0 1000 300"
+           preserveAspectRatio="none">
+      </svg>
+
+    </div>
+
+    <div class="note"
+         style="margin:5px 2px">
+
+      Блакитна лінія — рельєф.
+      Жовта пунктирна — LOS.
+      Жовта зона — 1-ша зона Френеля.
+
+    </div>
+
+    <div class="section"
+         style="margin-top:6px">
+
+      <div class="scroll">
+
+        <table>
+
+          <thead>
+
+            <tr>
+              <th>Відстань</th>
+              <th>Висота</th>
+              <th>Широта</th>
+              <th>Довгота</th>
+              <th>LOS</th>
+            </tr>
+
+          </thead>
+
+          <tbody id="profileTable">
+          </tbody>
+
+        </table>
+
+      </div>
+
     </div>
 
   </div>
 
 
-  <div id="table"></div>
+  <!-- COMPASS -->
+
+  <div id="compassTab"
+       class="hidden">
+
+    <div class="section">
+
+      <h3>🧭 Компас телефона</h3>
+
+      <div class="compass">
+
+        <div class="northDot"></div>
+
+        <div class="compassScale"
+             id="compassScale">
+        </div>
+
+        <div class="compassLabels"
+             id="compassLabels">
+        </div>
+
+        <div class="compassArrow"
+             id="compassArrow">
+        </div>
+
+        <div class="compassCenter"></div>
+
+      </div>
+
+      <div class="kpis">
+
+        <div class="kpi">
+          <span>Азимут</span>
+          <strong id="compassValue">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Напрямок</span>
+          <strong id="compassDirection">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Точність</span>
+          <strong id="compassAccuracy">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Стабілізація</span>
+          <strong id="compassStability">Активна</strong>
+        </div>
+
+      </div>
+
+      <br>
+
+      <button class="primary full"
+              onclick="enableCompass()">
+        🧭 Запустити датчик
+      </button>
+
+      <p class="note">
+
+        Компас використовує згладжування та відсікання
+        дрібних коливань. Це зменшує тремтіння показника,
+        але зберігає реакцію на реальний поворот телефона.
+
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- NETWORK -->
+
+  <div id="networkTab"
+       class="hidden">
+
+    <div class="section">
+
+      <h3>📶 Мережа браузера</h3>
+
+      <div class="kpis">
+
+        <div class="kpi">
+          <span>Стан</span>
+          <strong id="netOnline">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Тип</span>
+          <strong id="netType">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Якість</span>
+          <strong id="netEffective">—</strong>
+        </div>
+
+        <div class="kpi">
+          <span>Затримка</span>
+          <strong id="netRtt">—</strong>
+        </div>
+
+      </div>
+
+      <p class="note">
+
+        Браузер не має стандартного доступу до RSRP,
+        RSRQ, Cell ID та реальної потужності мобільного сигналу.
+
+      </p>
+
+    </div>
+
+  </div>
+
+
+  <!-- SAVED -->
+
+  <div id="savedTab"
+       class="hidden">
+
+    <div class="section">
+
+      <h3>💾 Збережені розрахунки</h3>
+
+      <button class="secondary full"
+              onclick="saveCurrent()">
+        💾 Зберегти поточний профіль
+      </button>
+
+      <br><br>
+
+      <div id="savedList"
+           class="note">
+        Немає збережених розрахунків.
+      </div>
+
+    </div>
+
+  </div>
 
 </div>
 
 </div>
 
 
-<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<footer>
+
+  © 2026 Всі права захищені<br>
+  РОЗРОБИВ: НАКОНЕЧНИЙ В. М.<br>
+  Слава Україні!
+
+</footer>
+
+</div>
+
 
 <script>
 
 /* =========================================================
-   CONFIG
+   GLOBAL
 ========================================================= */
 
-const PASSWORD = "2601";
+const PASSWORD="2601";
 
-const AUTH_KEY =
-  "terrainProfileAuth54";
+let map;
 
-const CACHE_KEY =
-  "terrainProfileElevationCacheV7";
+let userMarker=null;
+let accuracyCircle=null;
 
-const OPEN_METEO =
-  "https://api.open-meteo.com/v1/elevation";
+let directionLine=null;
+let directionSector=null;
 
-const OPEN_TOPO =
-  "https://api.opentopodata.org/v1/srtm90m";
+let pointAMarker=null;
+let pointBMarker=null;
+
+let pointA=null;
+let pointB=null;
+
+let currentLat=null;
+let currentLon=null;
+let currentAccuracy=null;
+let currentGpsAltitude=null;
+
+let currentBearing=null;
+let compassAccuracy=null;
+
+let bearingSource="phone";
+
+let gpsWatch=null;
+let gpsLive=false;
+
+let compassStarted=false;
+
+let rawHeading=null;
+let stableHeading=null;
+
+let headingInitialized=false;
+
+let antennaLayer=L.layerGroup();
+let antennaData=[];
+let antennasEnabled=true;
+
+let antennaTimer=null;
+
+let profileData=[];
+let lastProfile=null;
+let lastRadio=null;
+
+let profileMarkersLayer=null;
+let selectionMarker=null;
+
+let svgScale=null;
+let selectedIndex=null;
+
+let placingPoint=null;
+
+const DEG=Math.PI/180;
+const RAD=180/Math.PI;
+
+const EARTH=6371000;
+const K_FACTOR=4/3;
+
+const COMPASS_DEADBAND=1.4;
+const COMPASS_SMOOTHING=.16;
+
+const RADIO_BANDS={
+
+  "900":{
+    label:"GSM 900 МГц",
+    ghz:.9
+  },
+
+  "1800":{
+    label:"GSM/LTE 1800 МГц",
+    ghz:1.8
+  },
+
+  "2100":{
+    label:"UMTS 2100 МГц",
+    ghz:2.1
+  },
+
+  "2600":{
+    label:"LTE 2600 МГц",
+    ghz:2.6
+  },
+
+  "3500":{
+    label:"5G NR 3500 МГц",
+    ghz:3.5
+  }
+
+};
 
 
 /* =========================================================
-   DOM
+   BUTTON ANIMATION
 ========================================================= */
 
-const $ = id =>
-  document.getElementById(id);
+document.addEventListener("click",e=>{
 
-const lock = $("lock");
-const app = $("app");
+  const b=e.target.closest("button");
 
-const password = $("password");
-const unlockBtn = $("unlockBtn");
-const lockMsg = $("lockMsg");
+  if(!b) return;
 
-const gpsBadge = $("gpsBadge");
-const compassBadge = $("compassBadge");
+  b.classList.remove("neon-click");
 
-const headingValue = $("headingValue");
-const headingText = $("headingText");
-const directionValue = $("directionValue");
+  void b.offsetWidth;
 
-const latValue = $("latValue");
-const lonValue = $("lonValue");
-const accuracyValue = $("accuracyValue");
-const gpsAltValue = $("gpsAltValue");
+  b.classList.add("neon-click");
 
-const distanceSelect =
-  $("distance");
+  setTimeout(()=>{
+    b.classList.remove("neon-click");
+  },500);
 
-const pointsSelect =
-  $("pointsCount");
-
-const calculateBtn =
-  $("calculateBtn");
-
-const clearBtn =
-  $("clearBtn");
-
-const compassBtn =
-  $("compassBtn");
-
-const northBtn =
-  $("northBtn");
-
-const northMapBtn =
-  $("northMapBtn");
-
-const statusBox =
-  $("status");
-
-const startElev =
-  $("startElev");
-
-const endElev =
-  $("endElev");
-
-const minElev =
-  $("minElev");
-
-const maxElev =
-  $("maxElev");
-
-const endDiff =
-  $("endDiff");
-
-const maxDiff =
-  $("maxDiff");
-
-const selectedInfo =
-  $("selectedInfo");
-
-const chart =
-  $("chart");
-
-const chartWrap =
-  document.querySelector(".chartWrap");
-
-const chartInfo =
-  $("chartInfo");
-
-const chartSummary =
-  $("chartSummary");
-
-const table =
-  $("table");
+});
 
 
 /* =========================================================
    AUTH
 ========================================================= */
 
-function unlock(){
+function login(){
 
-  if(password.value === PASSWORD){
+  const p=document.getElementById("password").value;
+
+  if(p===PASSWORD){
 
     sessionStorage.setItem(
-      AUTH_KEY,
+      "terrainProfileAuth54",
       "1"
     );
 
-    lock.style.display =
-      "none";
+    document
+      .getElementById("lock")
+      .classList.add("hidden");
 
-    app.style.display =
-      "block";
-
-    setTimeout(()=>{
-      map.invalidateSize();
-      startGPS();
-      drawChart();
-    },200);
+    initApp();
 
   }else{
 
-    lockMsg.textContent =
-      "Невірний код.";
-
-    password.value = "";
-
-    password.focus();
+    document
+      .getElementById("loginError")
+      .textContent="Невірний пароль";
 
   }
 
 }
 
-unlockBtn.onclick = unlock;
+document
+  .getElementById("password")
+  .addEventListener("keydown",e=>{
+    if(e.key==="Enter") login();
+  });
 
-password.addEventListener(
-  "keydown",
-  e=>{
-    if(e.key==="Enter"){
-      unlock();
-    }
-  }
-);
+
+if(
+  sessionStorage.getItem("terrainProfileAuth54")==="1"
+){
+
+  document
+    .getElementById("lock")
+    .classList.add("hidden");
+
+  setTimeout(initApp,30);
+
+}
 
 
 /* =========================================================
-   MAP
+   INIT
 ========================================================= */
 
-const map =
-  L.map("map",{
+function initApp(){
+
+  if(map) return;
+
+  map=L.map("map",{
     zoomControl:true,
     preferCanvas:true
-  })
-  .setView(
-    [50.4501,30.5234],
-    13
-  );
+  }).setView([49,31],6);
 
 
-const osm =
-  L.tileLayer(
+  /* -------------------------------------------------------
+     БАЗОВА КАРТА
+  ------------------------------------------------------- */
+
+  const osm=L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     {
       maxZoom:19,
       attribution:"© OpenStreetMap"
     }
-  );
+  ).addTo(map);
 
-const satellite =
-  L.tileLayer(
+
+  /* -------------------------------------------------------
+     SATELLITE
+  ------------------------------------------------------- */
+
+  const satellite=L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     {
       maxZoom:19,
-      attribution:"© Esri"
+      attribution:"Esri"
     }
   );
 
-const topo =
-  L.tileLayer(
+
+  /* -------------------------------------------------------
+     ГІБРИД: СУПУТНИК + НАЗВИ
+  ------------------------------------------------------- */
+
+  const hybridLabels=L.tileLayer(
+    "https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}.png",
+    {
+      maxZoom:19,
+      subdomains:"abcd",
+      pane:"overlayPane",
+      opacity:.95,
+      attribution:"© OpenStreetMap © CARTO"
+    }
+  );
+
+
+  const hybrid=L.layerGroup([
+    satellite,
+    hybridLabels
+  ]);
+
+
+  /* -------------------------------------------------------
+     TOPO / РЕЛЬЄФ
+  ------------------------------------------------------- */
+
+  const topo=L.tileLayer(
     "https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",
     {
       maxZoom:17,
-      attribution:"© OpenTopoMap"
+      attribution:"© OpenTopoMap © OpenStreetMap contributors"
     }
   );
 
-osm.addTo(map);
+
+  /* -------------------------------------------------------
+     HILLSHADE
+  ------------------------------------------------------- */
+
+  const hillshade=L.tileLayer(
+    "https://tiles.wmflabs.org/hillshading/{z}/{x}/{y}.png",
+    {
+      maxZoom:17,
+      opacity:.42,
+      attribution:"© OpenStreetMap contributors"
+    }
+  );
 
 
-L.control.layers({
-  "🗺️ Карта":osm,
-  "🛰️ Супутник":satellite,
-  "⛰️ Топографічна":topo
-}).addTo(map);
+  /* -------------------------------------------------------
+     LAYERS
+  ------------------------------------------------------- */
+
+  L.control.layers(
+
+    {
+      "🗺️ Звичайна карта":osm,
+      "🛰️ Гібрид":hybrid,
+      "⛰️ Рельєф кольором":topo
+    },
+
+    {
+      "🌄 Тінювання рельєфу":hillshade
+    },
+
+    {
+      collapsed:true,
+      position:"topright"
+    }
+
+  ).addTo(map);
+
+
+  antennaLayer.addTo(map);
+
+  profileMarkersLayer=L.layerGroup().addTo(map);
+
+
+  /* -------------------------------------------------------
+     MAP CLICK
+  ------------------------------------------------------- */
+
+  map.on("click",e=>{
+
+    if(placingPoint==="A"){
+
+      setMapPoint(
+        "A",
+        e.latlng.lat,
+        e.latlng.lng
+      );
+
+      placingPoint=null;
+
+    }else if(placingPoint==="B"){
+
+      setMapPoint(
+        "B",
+        e.latlng.lat,
+        e.latlng.lng
+      );
+
+      placingPoint=null;
+    }
+
+  });
+
+
+  /* -------------------------------------------------------
+     MAP MOVE
+  ------------------------------------------------------- */
+
+  map.on("moveend",()=>{
+
+    if(!antennasEnabled) return;
+
+    clearTimeout(antennaTimer);
+
+    antennaTimer=setTimeout(
+      loadAntennas,
+      700
+    );
+
+  });
+
+
+  updateNetwork();
+
+  startGPS();
+
+  tryStartCompassPassive();
+
+  setTimeout(loadAntennas,1500);
+
+
+  /* -------------------------------------------------------
+     PROFILE EVENTS
+  ------------------------------------------------------- */
+
+  const svg=document.getElementById("profileSvg");
+
+  if(svg){
+
+    svg.addEventListener(
+      "mousemove",
+      handleChartHover
+    );
+
+    svg.addEventListener(
+      "click",
+      handleChartHover
+    );
+
+    svg.addEventListener(
+      "touchmove",
+      handleChartHover,
+      {passive:true}
+    );
+
+    svg.addEventListener(
+      "touchstart",
+      handleChartHover,
+      {passive:true}
+    );
+
+  }
+
+
+  buildCompass();
+
+
+  /* -------------------------------------------------------
+     WINDOW ORIENTATION / SCREEN
+  ------------------------------------------------------- */
+
+  window.addEventListener(
+    "orientationchange",
+    ()=>{
+      compassSamplesReset();
+    }
+  );
+
+}
+
+
+/* =========================================================
+   TABS
+========================================================= */
+
+function showTab(id,btn){
+
+  document.querySelectorAll(
+    "#mapTab,#profileTab,#compassTab,#networkTab,#savedTab"
+  ).forEach(x=>
+    x.classList.add("hidden")
+  );
+
+  document
+    .getElementById(id)
+    .classList.remove("hidden");
+
+  document
+    .querySelectorAll("nav button")
+    .forEach(x=>
+      x.classList.remove("active")
+    );
+
+  btn.classList.add("active");
+
+
+  if(id==="mapTab"){
+
+    setTimeout(()=>{
+      if(map) map.invalidateSize();
+    },100);
+
+  }
+
+
+  if(id==="compassTab"){
+
+    setTimeout(buildCompass,50);
+
+  }
+
+
+  if(id==="savedTab"){
+
+    renderSaved();
+
+  }
+
+}
 
 
 /* =========================================================
    GPS
 ========================================================= */
 
-const gps = {
-  lat:null,
-  lon:null,
-  accuracy:null,
-  altitude:null
-};
-
-let gpsMarker = null;
-let gpsCircle = null;
-let gpsWatch = null;
-
-
 function startGPS(){
 
   if(!navigator.geolocation){
 
-    gpsBadge.textContent =
-      "GPS • недоступний";
+    setGpsStatus(
+      "GPS недоступний",
+      "err"
+    );
 
-    gpsBadge.classList.add(
-      "warn"
+    alert(
+      "Цей браузер не підтримує геолокацію."
     );
 
     return;
   }
 
 
-  if(gpsWatch !== null){
-    return;
+  setGpsStatus(
+    "визначення…",
+    "warn"
+  );
+
+
+  navigator.geolocation.getCurrentPosition(
+
+    gpsSuccess,
+
+    gpsError,
+
+    {
+      enableHighAccuracy:true,
+      maximumAge:0,
+      timeout:20000
+    }
+
+  );
+
+}
+
+
+function gpsSuccess(pos){
+
+  const c=pos.coords;
+
+  currentLat=c.latitude;
+  currentLon=c.longitude;
+  currentAccuracy=c.accuracy;
+  currentGpsAltitude=c.altitude;
+
+
+  document.getElementById("lat").textContent=
+    currentLat.toFixed(6);
+
+  document.getElementById("lon").textContent=
+    currentLon.toFixed(6);
+
+  document.getElementById("accuracy").textContent=
+    isFinite(currentAccuracy)
+      ? Math.round(currentAccuracy)+" м"
+      : "—";
+
+  document.getElementById("gpsAlt").textContent=
+    c.altitude!=null
+      ? Math.round(c.altitude)+" м"
+      : "—";
+
+
+  setGpsStatus(
+    isFinite(currentAccuracy)
+      ? Math.round(currentAccuracy)+" м"
+      : "OK",
+    "ok"
+  );
+
+
+  updateUserMarker();
+
+
+  if(
+    bearingSource==="phone" &&
+    currentBearing!=null
+  ){
+    updateDirectionGraphic();
+  }
+
+}
+
+
+function gpsError(err){
+
+  let text="Помилка GPS";
+
+  if(err.code===1)
+    text="Дозвіл GPS відхилено";
+
+  if(err.code===2)
+    text="Місце не визначено";
+
+  if(err.code===3)
+    text="GPS timeout";
+
+
+  setGpsStatus(text,"err");
+
+}
+
+
+function setGpsStatus(text,type){
+
+  const el=
+    document.getElementById("gpsBadge");
+
+  el.textContent="GPS: "+text;
+  el.className="badge "+type;
+
+}
+
+
+function toggleGPSLive(){
+
+  gpsLive=!gpsLive;
+
+  const btn=
+    document.getElementById("gpsLiveBtn");
+
+
+  if(gpsLive){
+
+    btn.textContent="GPS LIVE: УВІМК.";
+    btn.classList.add("primary");
+
+
+    if(navigator.geolocation){
+
+      gpsWatch=
+        navigator.geolocation.watchPosition(
+
+          gpsSuccess,
+
+          gpsError,
+
+          {
+            enableHighAccuracy:true,
+            maximumAge:1000,
+            timeout:20000
+          }
+
+        );
+
+    }
+
+  }else{
+
+    btn.textContent="GPS LIVE: ВИМК.";
+    btn.classList.remove("primary");
+
+
+    if(gpsWatch!==null){
+
+      navigator.geolocation.clearWatch(
+        gpsWatch
+      );
+
+      gpsWatch=null;
+    }
+
+  }
+
+}
+
+
+/* =========================================================
+   USER MARKER
+========================================================= */
+
+function updateUserMarker(){
+
+  if(
+    !map ||
+    currentLat==null ||
+    currentLon==null
+  ) return;
+
+
+  const ll=[
+    currentLat,
+    currentLon
+  ];
+
+
+  if(!userMarker){
+
+    userMarker=
+      L.circleMarker(
+        ll,
+        {
+          radius:7,
+          color:"#35d7ff",
+          weight:2,
+          fillColor:"#35d7ff",
+          fillOpacity:.9
+        }
+      ).addTo(map);
+
+  }else{
+
+    userMarker.setLatLng(ll);
+
   }
 
 
-  gpsWatch =
-    navigator.geolocation.watchPosition(
+  if(!accuracyCircle){
 
-      position=>{
-
-        const c =
-          position.coords;
-
-        gps.lat =
-          c.latitude;
-
-        gps.lon =
-          c.longitude;
-
-        gps.accuracy =
-          c.accuracy;
-
-        gps.altitude =
-          c.altitude;
-
-
-        latValue.textContent =
-          gps.lat.toFixed(6);
-
-        lonValue.textContent =
-          gps.lon.toFixed(6);
-
-        accuracyValue.textContent =
-          Number.isFinite(gps.accuracy)
-          ? Math.round(gps.accuracy)+" м"
-          : "—";
-
-        gpsAltValue.textContent =
-          Number.isFinite(gps.altitude)
-          ? Math.round(gps.altitude)+" м"
-          : "—";
-
-
-        gpsBadge.textContent =
-          "GPS • "+
-          Math.round(gps.accuracy || 0)+
-          " м";
-
-        gpsBadge.classList.add(
-          "ok"
-        );
-
-
-        const pos =
-          [gps.lat,gps.lon];
-
-
-        if(!gpsMarker){
-
-          gpsMarker =
-            L.marker(pos,{
-              title:"Моя позиція"
-            }).addTo(map);
-
-          gpsMarker.bindPopup(
-            "МОЯ ПОЗИЦІЯ<br>"+
-            gps.lat.toFixed(6)+
-            ", "+
-            gps.lon.toFixed(6)
-          );
-
-        }else{
-
-          gpsMarker.setLatLng(pos);
-
+    accuracyCircle=
+      L.circle(
+        ll,
+        {
+          radius:currentAccuracy||20,
+          color:"#35d7ff",
+          weight:1,
+          opacity:.3,
+          fillOpacity:.04
         }
+      ).addTo(map);
+
+  }else{
+
+    accuracyCircle
+      .setLatLng(ll)
+      .setRadius(
+        currentAccuracy||20
+      );
+
+  }
 
 
-        if(!gpsCircle){
+  if(!map._gpsCentered){
 
-          gpsCircle =
-            L.circle(
-              pos,
-              {
-                radius:gps.accuracy || 10,
-                color:"#00eaff",
-                fillColor:"#00eaff",
-                fillOpacity:.08,
-                weight:1
-              }
-            ).addTo(map);
-
-        }else{
-
-          gpsCircle.setLatLng(pos);
-
-          gpsCircle.setRadius(
-            gps.accuracy || 10
-          );
-
-        }
-
-      },
-
-      error=>{
-
-        gpsBadge.textContent =
-          "GPS • немає сигналу";
-
-        gpsBadge.classList.add(
-          "warn"
-        );
-
-      },
-
-      {
-        enableHighAccuracy:true,
-        maximumAge:2000,
-        timeout:10000
-      }
-
+    map.setView(
+      ll,
+      15
     );
+
+    map._gpsCentered=true;
+
+  }
 
 }
 
@@ -1622,69 +2258,520 @@ function startGPS(){
    COMPASS
 ========================================================= */
 
-let heading = null;
-let compassActive = false;
-let lastHeading = null;
+async function enableCompass(){
 
+  if(!window.DeviceOrientationEvent){
 
-function normalizeHeading(value){
+    alert(
+      "Цей браузер не підтримує компас."
+    );
 
-  let n =
-    Number(value);
-
-  if(!Number.isFinite(n)){
-    return null;
+    return;
   }
 
-  n =
-    n % 360;
 
-  if(n<0){
-    n+=360;
+  try{
+
+    if(
+      typeof DeviceOrientationEvent.requestPermission==="function"
+    ){
+
+      const permission=
+        await DeviceOrientationEvent
+          .requestPermission();
+
+
+      if(permission!=="granted"){
+
+        alert(
+          "Дозвіл на компас не надано."
+        );
+
+        return;
+      }
+
+    }
+
+
+    startCompassListeners();
+
+
+  }catch(err){
+
+    console.error(err);
+
+    alert(
+      "Не вдалося увімкнути компас. "+
+      "Переконайтеся, що сайт відкритий через HTTPS."
+    );
+
   }
-
-  return n;
 
 }
 
 
-function smoothHeading(value){
+function tryStartCompassPassive(){
 
-  if(lastHeading===null){
+  if(!window.DeviceOrientationEvent)
+    return;
 
-    lastHeading=value;
 
-    return value;
+  if(
+    typeof DeviceOrientationEvent.requestPermission!=="function"
+  ){
+
+    startCompassListeners();
+
+  }
+
+}
+
+
+function startCompassListeners(){
+
+  if(compassStarted)
+    return;
+
+
+  compassStarted=true;
+
+
+  window.addEventListener(
+    "deviceorientationabsolute",
+    handleOrientation,
+    true
+  );
+
+
+  window.addEventListener(
+    "deviceorientation",
+    handleOrientation,
+    true
+  );
+
+
+  document
+    .getElementById("compassBadge")
+    .textContent="🧭 АКТИВНИЙ";
+
+}
+
+
+/* =========================================================
+   ORIENTATION
+========================================================= */
+
+function handleOrientation(e){
+
+  let heading=null;
+
+
+  /*
+    iPhone / Safari
+  */
+
+  if(
+    typeof e.webkitCompassHeading==="number" &&
+    isFinite(e.webkitCompassHeading)
+  ){
+
+    heading=e.webkitCompassHeading;
+
+    if(
+      typeof e.webkitCompassAccuracy==="number" &&
+      isFinite(e.webkitCompassAccuracy) &&
+      e.webkitCompassAccuracy>=0
+    ){
+
+      compassAccuracy=
+        e.webkitCompassAccuracy;
+
+    }
+
+  }else{
+
+    /*
+      Android / Chromium.
+
+      Для absolute orientation:
+      alpha приблизно відповідає повороту навколо
+      вертикальної осі.
+
+      Додаємо поправку екрана.
+    */
+
+    if(
+      e.absolute===true &&
+      typeof e.alpha==="number"
+    ){
+
+      heading=
+        360-e.alpha;
+
+    }else if(
+      typeof e.alpha==="number"
+    ){
+
+      heading=
+        360-e.alpha;
+
+    }
 
   }
 
 
-  let diff =
-    ((value-lastHeading+540)%360)-180;
+  if(
+    heading==null ||
+    !isFinite(heading)
+  ) return;
 
 
-  if(Math.abs(diff)<1){
-
-    return lastHeading;
-
-  }
+  heading=
+    normalizeBearing(heading);
 
 
-  lastHeading =
-    normalizeHeading(
-      lastHeading+
-      diff*.35
+  /*
+    Корекція орієнтації екрана.
+  */
+
+  heading=
+    applyScreenCorrection(
+      heading
     );
 
 
-  return lastHeading;
+  rawHeading=heading;
+
+
+  /*
+    Стабілізація.
+  */
+
+  if(!headingInitialized){
+
+    stableHeading=heading;
+    headingInitialized=true;
+
+  }else{
+
+    const diff=
+      shortestAngleDifference(
+        stableHeading,
+        heading
+      );
+
+
+    /*
+      Дуже маленьке тремтіння ігноруємо.
+    */
+
+    if(
+      Math.abs(diff) <
+      COMPASS_DEADBAND
+    ){
+
+      heading=stableHeading;
+
+    }else{
+
+      /*
+        Плавний circular EMA.
+      */
+
+      stableHeading=
+        normalizeBearing(
+          stableHeading+
+          diff*COMPASS_SMOOTHING
+        );
+
+    }
+
+  }
+
+
+  currentBearing=stableHeading;
+
+  bearingSource="phone";
+
+
+  updateCompassUI();
+  updateDirectionGraphic();
 
 }
 
 
-function cardinal(deg){
+function applyScreenCorrection(heading){
+
+  let angle=0;
+
+  try{
+
+    if(
+      screen &&
+      screen.orientation &&
+      typeof screen.orientation.angle==="number"
+    ){
+
+      angle=screen.orientation.angle;
+
+    }else if(
+      typeof window.orientation==="number"
+    ){
+
+      angle=window.orientation;
+
+    }
+
+  }catch(e){}
+
+
+  /*
+    Портрет:
+      0
+
+    Ландшафт:
+      90 / -90
+
+    Поворот назад:
+      180
+  */
+
+  return normalizeBearing(
+    heading+angle
+  );
+
+}
+
+
+function shortestAngleDifference(from,to){
+
+  return (
+    (to-from+540)%360
+  )-180;
+
+}
+
+
+function compassSamplesReset(){
+
+  headingInitialized=false;
+  stableHeading=null;
+
+}
+
+
+/* =========================================================
+   COMPASS UI
+========================================================= */
+
+function buildCompass(){
+
+  const scale=
+    document.getElementById("compassScale");
+
+  const labels=
+    document.getElementById("compassLabels");
+
+
+  if(!scale || !labels)
+    return;
+
+
+  scale.innerHTML="";
+  labels.innerHTML="";
+
+
+  /*
+    72 поділки = кожні 5°
+  */
+
+  for(let deg=0;deg<360;deg+=5){
+
+    const tick=
+      document.createElement("div");
+
+    tick.className="tick";
+
+
+    if(deg%45===0){
+
+      tick.classList.add("cardinal");
+
+    }else if(deg%15===0){
+
+      tick.classList.add("major");
+
+    }
+
+
+    tick.style.transform=
+      "translate(-50%,-50%) rotate("+
+      deg+
+      "deg)";
+
+
+    scale.appendChild(tick);
+
+  }
+
 
   const dirs=[
+    {deg:0,text:"N",cls:"north"},
+    {deg:45,text:"NE",cls:"other"},
+    {deg:90,text:"E",cls:"other"},
+    {deg:135,text:"SE",cls:"other"},
+    {deg:180,text:"S",cls:"other"},
+    {deg:225,text:"SW",cls:"other"},
+    {deg:270,text:"W",cls:"other"},
+    {deg:315,text:"NW",cls:"other"}
+  ];
+
+
+  /*
+    Розміщуємо підписи по колу.
+  */
+
+  const radius=73;
+
+
+  dirs.forEach(d=>{
+
+    const el=
+      document.createElement("div");
+
+    el.className=
+      "compassLabel "+d.cls;
+
+    el.textContent=d.text;
+
+
+    const rad=
+      (d.deg-90)*DEG;
+
+    const x=
+      Math.cos(rad)*radius;
+
+    const y=
+      Math.sin(rad)*radius;
+
+
+    el.style.transform=
+      "translate("+
+      (x-7)+
+      "px,"+
+      (y-7)+
+      "px)";
+
+
+    labels.appendChild(el);
+
+  });
+
+
+}
+
+
+function updateCompassUI(){
+
+  if(currentBearing==null)
+    return;
+
+
+  const b=
+    Math.round(
+      currentBearing*10
+    )/10;
+
+
+  const bInt=
+    Math.round(
+      currentBearing
+    );
+
+
+  const direction=
+    bearingName(bInt);
+
+
+  document.getElementById("bearing")
+    .textContent=
+      b.toFixed(1)+"°";
+
+
+  document.getElementById("bearingText")
+    .textContent=
+      direction;
+
+
+  document.getElementById("hudBearing")
+    .textContent=
+      b.toFixed(1)+"°";
+
+
+  document.getElementById("hudDirection")
+    .textContent=
+      direction;
+
+
+  document.getElementById("compassValue")
+    .textContent=
+      b.toFixed(1)+"°";
+
+
+  document.getElementById("compassDirection")
+    .textContent=
+      direction;
+
+
+  document.getElementById("compassAccuracy")
+    .textContent=
+      compassAccuracy!=null
+        ? "±"+compassAccuracy.toFixed(1)+"°"
+        : "—";
+
+
+  const arrow=
+    document.getElementById(
+      "compassArrow"
+    );
+
+
+  if(arrow){
+
+    arrow.style.transform=
+      "rotate("+b+"deg)";
+
+  }
+
+
+  document.getElementById(
+    "compassBadge"
+  ).textContent=
+    "🧭 "+b.toFixed(1)+"°";
+
+}
+
+
+/* =========================================================
+   BEARING
+========================================================= */
+
+function normalizeBearing(v){
+
+  return (
+    (v%360)+360
+  )%360;
+
+}
+
+
+function bearingName(b){
+
+  if(b==null)
+    return "—";
+
+
+  const names=[
     "Пн",
     "ПнСх",
     "Сх",
@@ -1695,1983 +2782,1796 @@ function cardinal(deg){
     "ПнЗх"
   ];
 
-  return dirs[
-    Math.round(deg/45)%8
+
+  return names[
+    Math.round(b/45)%8
   ];
 
 }
 
 
-function orientationHandler(e){
+/* =========================================================
+   MAP DIRECTION
+========================================================= */
 
-  let h = null;
-
+function updateDirectionGraphic(){
 
   if(
-    typeof e.webkitCompassHeading ===
-    "number"
-  ){
-
-    h =
-      e.webkitCompassHeading;
-
-  }else if(
-    typeof e.alpha === "number"
-  ){
-
-    h =
-      360-e.alpha;
-
-  }
+    !map ||
+    currentLat==null ||
+    currentLon==null ||
+    currentBearing==null
+  ) return;
 
 
-  h =
-    normalizeHeading(h);
-
-
-  if(h===null){
+  if(bearingSource!=="phone")
     return;
+
+
+  const distance=1000;
+
+
+  const end=
+    destination(
+      currentLat,
+      currentLon,
+      currentBearing,
+      distance
+    );
+
+
+  const points=[
+    [
+      currentLat,
+      currentLon
+    ],
+    [
+      end.lat,
+      end.lon
+    ]
+  ];
+
+
+  if(!directionLine){
+
+    directionLine=
+      L.polyline(
+        points,
+        {
+          color:"#35d7ff",
+          weight:3,
+          opacity:.92
+        }
+      ).addTo(map);
+
+  }else{
+
+    directionLine
+      .setLatLngs(points);
+
   }
 
 
-  h =
-    smoothHeading(h);
-
-
-  heading=h;
-
-
-  headingValue.textContent =
-    h.toFixed(0)+"°";
-
-  directionValue.textContent =
-    cardinal(h);
-
-  headingText.textContent =
-    h.toFixed(0)+"° "+
-    cardinal(h);
-
-
-  compassBadge.textContent =
-    "🧭 "+h.toFixed(0)+"°";
-
-  compassBadge.classList.add(
-    "ok"
-  );
-
-
-  northBtn.textContent =
-    "🧭 "+
-    h.toFixed(0)+"°";
-
-}
-
-
-async function startCompass(){
-
-  if(compassActive){
-    return;
-  }
-
-
-  try{
-
-    if(
-      typeof DeviceOrientationEvent !==
-      "undefined" &&
-      typeof DeviceOrientationEvent.requestPermission ===
-      "function"
-    ){
-
-      const permission =
-        await DeviceOrientationEvent
-          .requestPermission();
-
-      if(permission!=="granted"){
-
-        compassBadge.textContent =
-          "🧭 доступ заборонено";
-
-        return;
-
-      }
-
-    }
-
-
-    window.addEventListener(
-      "deviceorientationabsolute",
-      orientationHandler,
-      true
-    );
-
-    window.addEventListener(
-      "deviceorientation",
-      orientationHandler,
-      true
+  const sectorPoints=
+    makeSector(
+      currentLat,
+      currentLon,
+      currentBearing,
+      12,
+      1000
     );
 
 
-    compassActive=true;
+  if(!directionSector){
 
-    compassBtn.textContent =
-      "🧭 КОМПАС АКТИВНИЙ";
+    directionSector=
+      L.polygon(
+        sectorPoints,
+        {
+          color:"#35d7ff",
+          weight:1,
+          opacity:.3,
+          fillColor:"#35d7ff",
+          fillOpacity:.07
+        }
+      ).addTo(map);
 
-    compassBtn.classList.add(
-      "green"
-    );
+  }else{
 
-  }catch(error){
-
-    console.error(error);
-
-    compassBadge.textContent =
-      "🧭 недоступний";
+    directionSector
+      .setLatLngs(
+        sectorPoints
+      );
 
   }
 
 }
 
-compassBtn.onclick =
-  startCompass;
+
+function makeSector(
+  lat,
+  lon,
+  bearing,
+  width,
+  distance
+){
+
+  const arr=[
+    [lat,lon]
+  ];
+
+
+  for(
+    let i=-width;
+    i<=width;
+    i+=2
+  ){
+
+    const p=
+      destination(
+        lat,
+        lon,
+        bearing+i,
+        distance
+      );
+
+
+    arr.push([
+      p.lat,
+      p.lon
+    ]);
+
+  }
+
+
+  arr.push([
+    lat,
+    lon
+  ]);
+
+
+  return arr;
+
+}
 
 
 /* =========================================================
-   NORTH
+   DESTINATION
 ========================================================= */
 
-function northMap(){
-
-  map.setView(
-    map.getCenter(),
-    map.getZoom(),
-    {
-      animate:true
-    }
-  );
-
-}
-
-northBtn.onclick =
-  northMap;
-
-northMapBtn.onclick =
-  northMap;
-
-
-/* =========================================================
-   GEO
-========================================================= */
-
-function destinationPoint(
+function destination(
   lat,
   lon,
   bearing,
   distance
 ){
 
-  const R =
-    6371000;
+  const br=
+    bearing*DEG;
 
-  const br =
-    bearing*Math.PI/180;
+  const lat1=
+    lat*DEG;
 
-  const lat1 =
-    lat*Math.PI/180;
+  const lon1=
+    lon*DEG;
 
-  const lon1 =
-    lon*Math.PI/180;
-
-  const d =
-    distance/R;
+  const ang=
+    distance/EARTH;
 
 
-  const lat2 =
+  const lat2=
     Math.asin(
-      Math.sin(lat1)*Math.cos(d)+
-      Math.cos(lat1)*Math.sin(d)*Math.cos(br)
+      Math.sin(lat1)*Math.cos(ang)+
+      Math.cos(lat1)*Math.sin(ang)*Math.cos(br)
     );
 
 
-  const lon2 =
+  const lon2=
     lon1+
     Math.atan2(
-      Math.sin(br)*Math.sin(d)*Math.cos(lat1),
-      Math.cos(d)-
-      Math.sin(lat1)*Math.sin(lat2)
+      Math.sin(br)*Math.sin(ang)*Math.cos(lat1),
+      Math.cos(ang)-Math.sin(lat1)*Math.sin(lat2)
     );
 
 
   return {
-    lat:
-      lat2*180/Math.PI,
+
+    lat:lat2*RAD,
 
     lon:
-      lon2*180/Math.PI
+      ((lon2*RAD+540)%360)-180
+
   };
 
 }
 
 
 /* =========================================================
-   PROFILE STATE
+   DIRECTION MODES
 ========================================================= */
 
-let profile = [];
+function setDirectionMode(mode){
 
-let profileLine = null;
-let profileStrip = null;
+  if(mode==="phone"){
 
-let profileMarkers = [];
+    bearingSource="phone";
 
-let startMarker = null;
+    document
+      .getElementById("phoneMode")
+      .classList.add("active");
 
-let selectedIndex = -1;
+    document
+      .getElementById("abMode")
+      .classList.remove("active");
 
-let chartGeometry = [];
 
-let calculating = false;
+    document
+      .getElementById("modeText")
+      .textContent=
+        "🧭 Напрямок автоматично береться з компаса телефона. Поверніть телефон — промінь зміниться.";
+
+    if(currentBearing!=null)
+      updateDirectionGraphic();
+
+
+  }else{
+
+    bearingSource="ab";
+
+    document
+      .getElementById("abMode")
+      .classList.add("active");
+
+    document
+      .getElementById("phoneMode")
+      .classList.remove("active");
+
+
+    document
+      .getElementById("modeText")
+      .textContent=
+        "📍 Напрямок визначається між точками A (TX) та B (RX).";
+
+  }
+
+}
 
 
 /* =========================================================
-   CACHE
+   A / B
 ========================================================= */
 
-const elevationCache =
-  new Map();
+function setPointMode(p){
 
+  placingPoint=p;
 
-try{
-
-  const raw =
-    JSON.parse(
-      localStorage.getItem(
-        CACHE_KEY
-      ) || "{}"
-    );
-
-
-  Object.entries(raw)
-    .forEach(
-      ([key,value])=>{
-
-        const n =
-          Number(value);
-
-        if(Number.isFinite(n)){
-
-          elevationCache.set(
-            key,
-            n
-          );
-
-        }
-
-      }
-    );
-
-}catch(e){}
-
-
-function cacheKey(p){
-
-  return (
-    p.lat.toFixed(5)+
-    ","+
-    p.lon.toFixed(5)
+  alert(
+    "Натисніть на карту, щоб встановити точку "+p+"."
   );
 
 }
 
 
-function saveCache(){
+function setMapPoint(
+  type,
+  lat,
+  lon
+){
 
-  const obj={};
+  if(type==="A"){
 
-  let count=0;
+    pointA={
+      lat,
+      lon
+    };
 
 
-  for(
-    const [key,value]
-    of elevationCache
-  ){
+    if(pointAMarker){
 
-    obj[key]=value;
+      pointAMarker
+        .setLatLng([
+          lat,
+          lon
+        ]);
 
-    count++;
+    }else{
 
-    if(count>=5000){
-      break;
+      pointAMarker=
+        L.marker([
+          lat,
+          lon
+        ])
+        .addTo(map)
+        .bindPopup(
+          "Точка A (TX)"
+        );
+
     }
+
+
+    document
+      .getElementById("pointA")
+      .textContent=
+        lat.toFixed(5)+
+        ", "+
+        lon.toFixed(5);
+
+
+  }else{
+
+    pointB={
+      lat,
+      lon
+    };
+
+
+    if(pointBMarker){
+
+      pointBMarker
+        .setLatLng([
+          lat,
+          lon
+        ]);
+
+    }else{
+
+      pointBMarker=
+        L.marker([
+          lat,
+          lon
+        ])
+        .addTo(map)
+        .bindPopup(
+          "Точка B (RX)"
+        );
+
+    }
+
+
+    document
+      .getElementById("pointB")
+      .textContent=
+        lat.toFixed(5)+
+        ", "+
+        lon.toFixed(5);
+
+  }
+
+}
+
+
+function useAB(){
+
+  if(!pointA || !pointB){
+
+    alert(
+      "Спочатку встановіть A та B."
+    );
+
+    return;
+  }
+
+
+  const b=
+    getBearing(
+      pointA.lat,
+      pointA.lon,
+      pointB.lat,
+      pointB.lon
+    );
+
+
+  const d=
+    getDistance(
+      pointA.lat,
+      pointA.lon,
+      pointB.lat,
+      pointB.lon
+    );
+
+
+  bearingSource="ab";
+
+  currentBearing=b;
+
+
+  document
+    .getElementById("bearing")
+    .textContent=
+      b.toFixed(1)+"°";
+
+
+  document
+    .getElementById("bearingText")
+    .textContent=
+      bearingName(b);
+
+
+  document
+    .getElementById("profileDistance")
+    .textContent=
+      formatDistance(d);
+
+
+  updateABLine();
+
+}
+
+
+function updateABLine(){
+
+  if(!pointA || !pointB)
+    return;
+
+
+  const line=[
+    [
+      pointA.lat,
+      pointA.lon
+    ],
+    [
+      pointB.lat,
+      pointB.lon
+    ]
+  ];
+
+
+  if(directionLine){
+
+    directionLine
+      .setLatLngs(line);
+
+
+    directionLine.setStyle({
+      color:"#65ffb3"
+    });
+
+  }else{
+
+    directionLine=
+      L.polyline(
+        line,
+        {
+          color:"#65ffb3",
+          weight:3
+        }
+      ).addTo(map);
+
+  }
+
+}
+
+
+/* =========================================================
+   GEODESY
+========================================================= */
+
+function getDistance(
+  lat1,
+  lon1,
+  lat2,
+  lon2
+){
+
+  const p1=lat1*DEG;
+  const p2=lat2*DEG;
+
+  const dp=
+    (lat2-lat1)*DEG;
+
+  const dl=
+    (lon2-lon1)*DEG;
+
+
+  const a=
+    Math.sin(dp/2)**2+
+    Math.cos(p1)*
+    Math.cos(p2)*
+    Math.sin(dl/2)**2;
+
+
+  return 2*EARTH*
+    Math.atan2(
+      Math.sqrt(a),
+      Math.sqrt(1-a)
+    );
+
+}
+
+
+function getBearing(
+  lat1,
+  lon1,
+  lat2,
+  lon2
+){
+
+  const p1=lat1*DEG;
+  const p2=lat2*DEG;
+
+  const dl=
+    (lon2-lon1)*DEG;
+
+
+  const y=
+    Math.sin(dl)*
+    Math.cos(p2);
+
+
+  const x=
+    Math.cos(p1)*
+    Math.sin(p2)-
+    Math.sin(p1)*
+    Math.cos(p2)*
+    Math.cos(dl);
+
+
+  return normalizeBearing(
+    Math.atan2(y,x)*RAD
+  );
+
+}
+
+
+function formatDistance(d){
+
+  if(d<1000)
+    return Math.round(d)+" м";
+
+
+  return (
+    d/1000
+  ).toFixed(2)+" км";
+
+}
+
+
+/* =========================================================
+   PROFILE
+========================================================= */
+
+async function calculateProfile(){
+
+  let lat;
+  let lon;
+  let bearing;
+  let distance;
+
+
+  if(bearingSource==="phone"){
+
+    if(currentLat==null){
+
+      alert(
+        "Спочатку визначте ваше місце."
+      );
+
+      return;
+    }
+
+
+    if(currentBearing==null){
+
+      alert(
+        "Компас ще не визначив напрямок."
+      );
+
+      return;
+    }
+
+
+    lat=currentLat;
+    lon=currentLon;
+    bearing=currentBearing;
+
+
+  }else{
+
+    if(!pointA || !pointB){
+
+      alert(
+        "Для A → B встановіть обидві точки."
+      );
+
+      return;
+    }
+
+
+    lat=pointA.lat;
+    lon=pointA.lon;
+
+
+    bearing=
+      getBearing(
+        pointA.lat,
+        pointA.lon,
+        pointB.lat,
+        pointB.lon
+      );
+
+
+    distance=
+      getDistance(
+        pointA.lat,
+        pointA.lon,
+        pointB.lat,
+        pointB.lon
+      );
+
+  }
+
+
+  if(bearingSource==="phone"){
+
+    distance=
+      Number(
+        document
+          .getElementById("distance")
+          .value
+      );
+
+  }
+
+
+  const count=
+    Number(
+      document
+        .getElementById("points")
+        .value
+    );
+
+
+  document
+    .getElementById("profileDistance")
+    .textContent=
+      formatDistance(distance);
+
+
+  document
+    .getElementById("profilePoints")
+    .textContent=
+      count;
+
+
+  showTab(
+    "profileTab",
+    document.querySelector(
+      "nav button:nth-child(2)"
+    )
+  );
+
+
+  const pts=[];
+
+
+  for(let i=0;i<count;i++){
+
+    const d=
+      distance*i/(count-1);
+
+
+    const p=
+      destination(
+        lat,
+        lon,
+        bearing,
+        d
+      );
+
+
+    pts.push({
+      distance:d,
+      lat:p.lat,
+      lon:p.lon
+    });
 
   }
 
 
   try{
 
-    localStorage.setItem(
-      CACHE_KEY,
-      JSON.stringify(obj)
+    const elevations=
+      await getElevations(pts);
+
+
+    profileData=
+      pts.map((p,i)=>({
+
+        ...p,
+
+        elevation:
+          Number(elevations[i])
+
+      }));
+
+
+    lastProfile={
+
+      lat,
+      lon,
+      bearing,
+      distance,
+      points:profileData
+
+    };
+
+
+    selectedIndex=null;
+
+
+    renderProfile();
+
+    drawProfileOnMap();
+
+
+  }catch(err){
+
+    console.error(err);
+
+    alert(
+      "Не вдалося отримати висоти.\n"+
+      "Перевірте інтернет та спробуйте ще раз."
     );
 
-  }catch(e){}
+  }
 
 }
 
 
 /* =========================================================
-   ELEVATION API 1
-========================================================= */
-
-async function getOpenMeteo(points){
-
-  const latitudes =
-    points
-      .map(
-        p=>p.lat.toFixed(6)
-      )
-      .join(",");
-
-
-  const longitudes =
-    points
-      .map(
-        p=>p.lon.toFixed(6)
-      )
-      .join(",");
-
-
-  const url =
-    OPEN_METEO+
-    "?latitude="+
-    encodeURIComponent(latitudes)+
-    "&longitude="+
-    encodeURIComponent(longitudes);
-
-
-  const response =
-    await fetch(
-      url,
-      {
-        method:"GET",
-        cache:"no-store"
-      }
-    );
-
-
-  if(!response.ok){
-
-    throw new Error(
-      "Open-Meteo HTTP "+
-      response.status
-    );
-
-  }
-
-
-  const data =
-    await response.json();
-
-
-  if(
-    !data ||
-    !Array.isArray(
-      data.elevation
-    ) ||
-    data.elevation.length !==
-    points.length
-  ){
-
-    throw new Error(
-      "Некоректна відповідь Open-Meteo"
-    );
-
-  }
-
-
-  return data.elevation.map(
-    Number
-  );
-
-}
-
-
-/* =========================================================
-   ELEVATION API 2
-========================================================= */
-
-async function getOpenTopo(points){
-
-  const locations =
-    points
-      .map(
-        p=>
-          p.lat.toFixed(6)+
-          ","+
-          p.lon.toFixed(6)
-      )
-      .join("|");
-
-
-  const url =
-    OPEN_TOPO+
-    "?locations="+
-    encodeURIComponent(
-      locations
-    );
-
-
-  const response =
-    await fetch(
-      url,
-      {
-        method:"GET",
-        cache:"no-store"
-      }
-    );
-
-
-  if(!response.ok){
-
-    throw new Error(
-      "OpenTopoData HTTP "+
-      response.status
-    );
-
-  }
-
-
-  const data =
-    await response.json();
-
-
-  if(
-    !data ||
-    !Array.isArray(
-      data.results
-    ) ||
-    data.results.length !==
-    points.length
-  ){
-
-    throw new Error(
-      "Некоректна відповідь OpenTopoData"
-    );
-
-  }
-
-
-  return data.results.map(
-    r=>Number(r.elevation)
-  );
-
-}
-
-
-/* =========================================================
-   GET REAL ELEVATIONS
+   ELEVATIONS
 ========================================================= */
 
 async function getElevations(points){
 
-  const result =
-    new Array(points.length);
+  const latitudes=
+    points
+      .map(p=>p.lat.toFixed(6))
+      .join(",");
 
 
-  const missing=[];
-  const missingIndexes=[];
+  const longitudes=
+    points
+      .map(p=>p.lon.toFixed(6))
+      .join(",");
 
 
-  points.forEach(
-    (p,i)=>{
-
-      const key =
-        cacheKey(p);
-
-
-      if(
-        elevationCache.has(key)
-      ){
-
-        result[i] =
-          elevationCache.get(key);
-
-      }else{
-
-        missing.push(p);
-
-        missingIndexes.push(i);
-
-      }
-
-    }
-  );
-
-
-  /* все є в кеші */
-
-  if(!missing.length){
-
-    setStatus(
-      "Висоти взято з локального кешу. Новий запит не потрібен.",
-      "success"
-    );
-
-    return result;
-
-  }
-
-
-  setStatus(
-    "Отримую висоти для "+
-    missing.length+
-    " точок…",
-    "active"
-  );
-
-
-  let values=null;
-  let source="";
-
-
-  /* ======================================================
-     PRIMARY
-  ====================================================== */
+  /* Open-Meteo */
 
   try{
 
-    values =
-      await getOpenMeteo(
-        missing
+    const url=
+      "https://api.open-meteo.com/v1/elevation"+
+      "?latitude="+
+      encodeURIComponent(latitudes)+
+      "&longitude="+
+      encodeURIComponent(longitudes);
+
+
+    const r=
+      await fetch(url);
+
+
+    if(!r.ok)
+      throw new Error(
+        "Open-Meteo"
       );
 
-    source =
-      "Open-Meteo / Copernicus DEM";
 
-  }catch(error){
+    const data=
+      await r.json();
+
+
+    if(
+      Array.isArray(data.elevation) &&
+      data.elevation.length===points.length
+    ){
+
+      return data.elevation;
+
+    }
+
+  }catch(e){
 
     console.warn(
       "Open-Meteo:",
-      error
+      e
     );
 
   }
 
 
-  /* ======================================================
-     FALLBACK
-  ====================================================== */
+  /* OpenTopoData */
 
-  if(!values){
+  try{
 
-    setStatus(
-      "Основне джерело тимчасово недоступне. Використовую резервне…",
-      "active"
-    );
+    const locations=
+      points
+        .map(p=>
+          p.lat.toFixed(6)+
+          ","+
+          p.lon.toFixed(6)
+        )
+        .join("|");
 
 
-    try{
+    const url=
+      "https://api.opentopodata.org/v1/srtm90m?locations="+
+      encodeURIComponent(locations);
 
-      values =
-        await getOpenTopo(
-          missing
-        );
 
-      source =
-        "OpenTopoData / SRTM90m";
+    const r=
+      await fetch(url);
 
-    }catch(error){
 
-      console.warn(
-        "OpenTopoData:",
-        error
+    if(!r.ok)
+      throw new Error(
+        "OpenTopoData"
       );
 
 
-      throw new Error(
-        "Не вдалося отримати реальні висоти. Перевір інтернет-з'єднання."
+    const data=
+      await r.json();
+
+
+    if(
+      Array.isArray(data.results) &&
+      data.results.length===points.length
+    ){
+
+      return data.results.map(
+        x=>x.elevation
       );
 
     }
 
+  }catch(e){
+
+    console.warn(
+      "OpenTopoData:",
+      e
+    );
+
   }
 
 
-  values.forEach(
-    (value,i)=>{
+  /* Open-Elevation */
 
-      const elevation =
-        Number(value);
+  try{
+
+    const r=
+      await fetch(
+        "https://api.open-elevation.com/api/v1/lookup",
+        {
+          method:"POST",
+
+          headers:{
+            "Content-Type":
+              "application/json"
+          },
+
+          body:JSON.stringify({
+            locations:
+              points.map(p=>({
+                latitude:p.lat,
+                longitude:p.lon
+              }))
+          })
+        }
+      );
 
 
-      if(!Number.isFinite(elevation)){
+    if(!r.ok)
+      throw new Error(
+        "Open-Elevation"
+      );
 
-        throw new Error(
-          "Сервіс повернув некоректну висоту."
+
+    const data=
+      await r.json();
+
+
+    if(
+      Array.isArray(data.results) &&
+      data.results.length===points.length
+    ){
+
+      return data.results.map(
+        x=>x.elevation
+      );
+
+    }
+
+  }catch(e){
+
+    console.warn(
+      "Open-Elevation:",
+      e
+    );
+
+  }
+
+
+  throw new Error(
+    "No elevation source"
+  );
+
+}
+
+
+/* =========================================================
+   RADIO
+========================================================= */
+
+function computeRadioLink(
+  points,
+  h1,
+  h2,
+  freqGHz
+){
+
+  if(
+    !points ||
+    points.length<2
+  ) return null;
+
+
+  const D=
+    points[points.length-1].distance;
+
+
+  if(!(D>0))
+    return null;
+
+
+  const txY=
+    points[0].elevation+h1;
+
+  const rxY=
+    points[points.length-1].elevation+h2;
+
+
+  let minRatio=Infinity;
+
+  let worstIdx=0;
+
+
+  const out=
+    points.map((p,i)=>{
+
+      const d1=
+        p.distance;
+
+      const d2=
+        D-p.distance;
+
+
+      const losY=
+        txY+
+        (rxY-txY)*
+        (d1/D);
+
+
+      const bulge=
+        (d1*d2)/
+        (2*K_FACTOR*EARTH);
+
+
+      const effTerrain=
+        p.elevation+
+        bulge;
+
+
+      const rF=
+        (
+          d1===0 ||
+          d2===0
+        )
+        ? 0
+        :
+        17.31*
+        Math.sqrt(
+          (d1/1000)*
+          (d2/1000)/
+          (freqGHz*(D/1000))
         );
+
+
+      const clearance=
+        losY-effTerrain;
+
+
+      const ratio=
+        rF>0
+          ? clearance/rF
+          : clearance>=0
+            ? 2
+            : -2;
+
+
+      if(ratio<minRatio){
+
+        minRatio=ratio;
+        worstIdx=i;
 
       }
 
 
-      const originalIndex =
-        missingIndexes[i];
+      return{
+        ...p,
+        losY,
+        effTerrain,
+        bulge,
+        rF,
+        clearance,
+        ratio
+      };
+
+    });
 
 
-      result[originalIndex] =
-        elevation;
+  let status;
+  let statusClass;
 
 
-      elevationCache.set(
-        cacheKey(
-          points[originalIndex]
-        ),
-        elevation
-      );
+  if(minRatio>=1){
 
-    }
-  );
+    status=
+      "Пряма видимість — 1-ша зона Френеля вільна";
+
+    statusClass="ok";
+
+  }else if(minRatio>=.6){
+
+    status=
+      "Пряма видимість, часткове перекриття зони Френеля";
+
+    statusClass="warn";
+
+  }else if(minRatio>=0){
+
+    status=
+      "Значне перекриття зони Френеля — можливі завади";
+
+    statusClass="warn";
+
+  }else{
+
+    status=
+      "Прямої видимості немає — рельєф перекриває лінію";
+
+    statusClass="err";
+
+  }
 
 
-  saveCache();
-
-
-  setStatus(
-    "Висоти отримано • "+
-    source+
-    " • "+
-    missing.length+
-    " точок.",
-    "success"
-  );
-
-
-  return result;
+  return{
+    points:out,
+    D,
+    txY,
+    rxY,
+    minRatio,
+    worstIdx,
+    status,
+    statusClass
+  };
 
 }
 
 
 /* =========================================================
-   STATUS
+   RADIO RECALC
 ========================================================= */
 
-function setStatus(
-  text,
-  type=""
-){
+function recalcRadio(){
 
-  statusBox.textContent =
-    text;
+  if(!profileData.length){
 
-  statusBox.className =
-    "status "+type;
+    alert(
+      "Спочатку розрахуйте профіль."
+    );
+
+    return;
+  }
+
+
+  renderProfile();
 
 }
 
 
 /* =========================================================
-   BUILD PROFILE
+   PROFILE RENDER
 ========================================================= */
 
-function buildProfile(){
+function renderProfile(){
 
-  if(
-    !Number.isFinite(gps.lat) ||
-    !Number.isFinite(gps.lon)
-  ){
-
-    throw new Error(
-      "Очікую GPS-позицію."
-    );
-
-  }
+  if(!profileData.length)
+    return;
 
 
-  if(!Number.isFinite(heading)){
-
-    throw new Error(
-      "Увімкни компас і дочекайся показу курсу."
-    );
-
-  }
-
-
-  const totalDistance =
+  const h1=
     Number(
-      distanceSelect.value
-    );
+      document.getElementById("h1").value
+    )||0;
 
 
-  const count =
+  const h2=
     Number(
-      pointsSelect.value
+      document.getElementById("h2").value
+    )||0;
+
+
+  const freqKey=
+    document.getElementById("freq").value;
+
+
+  const freqGHz=
+    (
+      RADIO_BANDS[freqKey] ||
+      RADIO_BANDS["1800"]
+    ).ghz;
+
+
+  const showFresnel=
+    document
+      .getElementById("showFresnel")
+      .checked;
+
+
+  lastRadio=
+    computeRadioLink(
+      profileData,
+      h1,
+      h2,
+      freqGHz
     );
 
 
-  const result=[];
+  const elevs=
+    profileData
+      .map(p=>Number(p.elevation))
+      .filter(Number.isFinite);
 
 
-  for(
-    let i=0;
-    i<count;
-    i++
-  ){
-
-    const distance =
-      totalDistance*
-      i/
-      (count-1);
+  if(!elevs.length)
+    return;
 
 
-    const point =
-      destinationPoint(
-        gps.lat,
-        gps.lon,
-        heading,
-        distance
-      );
+  const elevMin=
+    Math.min(...elevs);
+
+  const elevMax=
+    Math.max(...elevs);
+
+  const elevAvg=
+    elevs.reduce(
+      (a,b)=>a+b,
+      0
+    )/elevs.length;
 
 
-    result.push({
+  document
+    .getElementById("minElev")
+    .textContent=
+      elevMin.toFixed(1)+" м";
 
-      index:i,
 
-      distance:
+  document
+    .getElementById("maxElev")
+    .textContent=
+      elevMax.toFixed(1)+" м";
 
-        distance,
 
-      lat:
-        point.lat,
+  document
+    .getElementById("reliefDiff")
+    .textContent=
+      (elevMax-elevMin)
+      .toFixed(1)+" м";
 
-      lon:
-        point.lon,
 
-      elevation:
-        null
+  document
+    .getElementById("avgElev")
+    .textContent=
+      elevAvg.toFixed(1)+" м";
+
+
+  let graphMin=elevMin;
+  let graphMax=elevMax;
+
+
+  if(lastRadio){
+
+    lastRadio.points.forEach(p=>{
+
+      const lo=
+        p.effTerrain-
+        (showFresnel?p.rF:0);
+
+      const hi=
+        p.effTerrain+
+        (showFresnel?p.rF:0);
+
+
+      graphMin=
+        Math.min(
+          graphMin,
+          p.losY,
+          lo
+        );
+
+
+      graphMax=
+        Math.max(
+          graphMax,
+          p.losY,
+          hi
+        );
 
     });
 
   }
 
 
-  return result;
-
-}
-
-
-/* =========================================================
-   CLEAR MAP
-========================================================= */
-
-function clearProfileMap(){
-
-  if(profileLine){
-
-    map.removeLayer(
-      profileLine
+  const losEl=
+    document.getElementById(
+      "losStatus"
     );
 
-    profileLine=null;
 
-  }
-
-
-  if(profileStrip){
-
-    map.removeLayer(
-      profileStrip
+  const fresnelEl=
+    document.getElementById(
+      "fresnelMin"
     );
 
-    profileStrip=null;
 
-  }
+  const fullStatusEl=
+    document.getElementById(
+      "losFullStatus"
+    );
 
 
-  profileMarkers.forEach(
-    marker=>{
-      map.removeLayer(
-        marker
+  if(lastRadio){
+
+    const colorMap={
+      ok:"var(--accent2)",
+      warn:"var(--warn)",
+      err:"var(--danger)"
+    };
+
+
+    const shortMap={
+      ok:"Вільна",
+      warn:"Частково",
+      err:"Немає"
+    };
+
+
+    losEl.textContent=
+      shortMap[
+        lastRadio.statusClass
+      ];
+
+
+    losEl.style.color=
+      colorMap[
+        lastRadio.statusClass
+      ];
+
+
+    const pct=
+      Math.round(
+        Math.max(
+          -100,
+          Math.min(
+            200,
+            lastRadio.minRatio*100
+          )
+        )
       );
-    }
-  );
 
 
-  profileMarkers=[];
+    fresnelEl.textContent=
+      pct+"%";
 
 
-  if(startMarker){
+    fresnelEl.style.color=
+      colorMap[
+        lastRadio.statusClass
+      ];
 
-    map.removeLayer(
-      startMarker
-    );
 
-    startMarker=null;
+    fullStatusEl.textContent=
+      "📡 "+lastRadio.status;
 
   }
 
-}
+
+  const svg=
+    document.getElementById(
+      "profileSvg"
+    );
 
 
-/* =========================================================
-   ICON
-========================================================= */
+  const W=1000;
+  const H=300;
+  const pad=28;
 
-function profileIcon(
-  selected=false
-){
 
-  return L.divIcon({
+  const range=
+    Math.max(
+      1,
+      graphMax-graphMin
+    );
 
-    className:"",
 
-    html:
-      "<div class='profileDot "+
-      (selected
-        ? "selected"
-        : "")+
-      "'></div>",
+  const X=i=>
+    pad+
+    (W-pad*2)*
+    i/
+    (profileData.length-1);
 
-    iconSize:
-      selected
-      ? [20,20]
-      : [12,12],
 
-    iconAnchor:
-      selected
-      ? [10,10]
-      : [6,6]
+  const Y=v=>
+    H-pad-
+    ((v-graphMin)/range)*
+    (H-pad*2);
+
+
+  let terrainPath="";
+
+
+  profileData.forEach((p,i)=>{
+
+    terrainPath+=
+      (i===0?"M":"L")+
+      X(i).toFixed(1)+
+      " "+
+      Y(p.elevation).toFixed(1)+
+      " ";
 
   });
 
-}
+
+  const area=
+    terrainPath+
+    "L "+
+    X(profileData.length-1).toFixed(1)+
+    " "+
+    (H-pad)+
+    " L "+
+    X(0).toFixed(1)+
+    " "+
+    (H-pad)+
+    " Z";
 
 
-/* =========================================================
-   DRAW MAP PROFILE
-========================================================= */
-
-function drawMapProfile(){
-
-  clearProfileMap();
+  let losPath="";
+  let fresnelFillPath="";
 
 
-  const line =
-    profile.map(
-      p=>[
-        p.lat,
-        p.lon
-      ]
-    );
+  if(lastRadio){
+
+    lastRadio.points.forEach((p,i)=>{
+
+      losPath+=
+        (i===0?"M":"L")+
+        X(i).toFixed(1)+
+        " "+
+        Y(p.losY).toFixed(1)+
+        " ";
+
+    });
 
 
-  /* CENTRAL LINE */
+    if(showFresnel){
 
-  profileLine =
-    L.polyline(
-      line,
-      {
-        color:"#00eaff",
-        weight:4,
-        opacity:.95
-      }
-    ).addTo(map);
+      const upperPts=[];
+      const lowerPts=[];
 
 
-  /* ======================================================
-     STRIP 70 METERS
-  ====================================================== */
+      lastRadio.points.forEach((p,i)=>{
 
-  const halfWidth=35;
-
-  const left=[];
-  const right=[];
-
-
-  profile.forEach(
-    p=>{
-
-      const l =
-        destinationPoint(
-          p.lat,
-          p.lon,
-          heading-90,
-          halfWidth
+        upperPts.push(
+          X(i).toFixed(1)+
+          " "+
+          Y(
+            p.effTerrain+
+            p.rF
+          ).toFixed(1)
         );
 
 
-      const r =
-        destinationPoint(
-          p.lat,
-          p.lon,
-          heading+90,
-          halfWidth
+        lowerPts.push(
+          X(i).toFixed(1)+
+          " "+
+          Y(
+            p.effTerrain-
+            p.rF
+          ).toFixed(1)
         );
 
-
-      left.push([
-        l.lat,
-        l.lon
-      ]);
-
-      right.push([
-        r.lat,
-        r.lon
-      ]);
-
-    }
-  );
-
-
-  profileStrip =
-    L.polygon(
-      [
-        ...left,
-        ...right.reverse()
-      ],
-      {
-        color:"#00eaff",
-        weight:1,
-        opacity:.55,
-        fillColor:"#00eaff",
-        fillOpacity:.07
-      }
-    ).addTo(map);
-
-
-  /* POINTS */
-
-  profile.forEach(
-    (p,i)=>{
-
-      const marker =
-        L.marker(
-          [
-            p.lat,
-            p.lon
-          ],
-          {
-            icon:
-              profileIcon(false),
-
-            zIndexOffset:500
-          }
-        )
-        .addTo(map);
-
-
-      marker.bindTooltip(
-        "Точка "+
-        (i+1)+
-        " • "+
-        Math.round(
-          p.distance
-        )+
-        " м",
-        {
-          direction:"top",
-          opacity:.9
-        }
-      );
-
-
-      marker.on(
-        "click",
-        ()=>{
-          selectPoint(
-            i
-          );
-        }
-      );
-
-
-      marker.on(
-        "dblclick",
-        e=>{
-
-          if(
-            e.originalEvent
-          ){
-            e.originalEvent
-              .preventDefault();
-          }
-
-          selectPoint(
-            i
-          );
-
-          focusMapPoint(
-            i
-          );
-
-        }
-      );
-
-
-      profileMarkers.push(
-        marker
-      );
-
-    }
-  );
-
-
-  /* START */
-
-  startMarker =
-    L.marker(
-      [
-        gps.lat,
-        gps.lon
-      ],
-      {
-        icon:
-          L.divIcon({
-
-            className:"",
-
-            html:
-              "<div class='startMarker'></div>",
-
-            iconSize:
-              [18,18],
-
-            iconAnchor:
-              [9,9]
-
-          }),
-
-        zIndexOffset:2000
-      }
-    )
-    .addTo(map);
-
-
-  startMarker.bindPopup(
-    "<b>СТАРТ</b><br>"+
-    "Курс: "+
-    heading.toFixed(1)+
-    "°<br>"+
-    "Напрямок: "+
-    cardinal(heading)
-  );
-
-
-  map.fitBounds(
-    profileLine.getBounds(),
-    {
-      padding:[
-        80,
-        80
-      ],
-      maxZoom:17
-    }
-  );
-
-}
-
-
-/* =========================================================
-   SELECT POINT
-========================================================= */
-
-function selectPoint(index){
-
-  if(
-    index<0 ||
-    index>=profile.length
-  ){
-    return;
-  }
-
-
-  selectedIndex =
-    index;
-
-
-  profileMarkers.forEach(
-    (marker,i)=>{
-
-      marker.setIcon(
-        profileIcon(
-          i===index
-        )
-      );
-
-    }
-  );
-
-
-  const p =
-    profile[index];
-
-
-  const start =
-    profile[0].elevation;
-
-
-  const difference =
-    p.elevation-start;
-
-
-  const absolute =
-    Math.abs(
-      difference
-    );
-
-
-  selectedInfo.innerHTML =
-
-    "<b>Точка "+
-    (index+1)+
-    "</b><br>"+
-
-    "Відстань: <b>"+
-    p.distance.toFixed(0)+
-    " м</b><br>"+
-
-    "Висота: <b>"+
-    p.elevation.toFixed(1)+
-    " м</b><br>"+
-
-    "Перепад від старту: <b>"+
-    (difference>=0
-      ? "+"
-      : "")+
-    difference.toFixed(1)+
-    " м</b><br>"+
-
-    "Абсолютний перепад: <b>"+
-    absolute.toFixed(1)+
-    " м</b><br>"+
-
-    "Координати: "+
-    p.lat.toFixed(6)+
-    ", "+
-    p.lon.toFixed(6);
-
-
-  updateTableSelection();
-
-  drawChart();
-
-}
-
-
-/* =========================================================
-   FOCUS MAP
-========================================================= */
-
-function focusMapPoint(index){
-
-  const p =
-    profile[index];
-
-
-  if(!p){
-    return;
-  }
-
-
-  map.flyTo(
-    [
-      p.lat,
-      p.lon
-    ],
-    Math.max(
-      map.getZoom(),
-      16
-    ),
-    {
-      duration:.7
-    }
-  );
-
-
-  if(profileMarkers[index]){
-
-    profileMarkers[index]
-      .openTooltip();
-
-  }
-
-}
-
-
-/* =========================================================
-   STATISTICS
-========================================================= */
-
-function updateStatistics(){
-
-  if(!profile.length){
-    return;
-  }
-
-
-  const values =
-    profile.map(
-      p=>p.elevation
-    );
-
-
-  const first =
-    values[0];
-
-  const last =
-    values[values.length-1];
-
-
-  const min =
-    Math.min(...values);
-
-  const max =
-    Math.max(...values);
-
-
-  const maxDifference =
-    Math.max(
-      ...values.map(
-        v=>Math.abs(v-first)
-      )
-    );
-
-
-  startElev.textContent =
-    first.toFixed(1)+
-    " м";
-
-
-  endElev.textContent =
-    last.toFixed(1)+
-    " м";
-
-
-  minElev.textContent =
-    min.toFixed(1)+
-    " м";
-
-
-  maxElev.textContent =
-    max.toFixed(1)+
-    " м";
-
-
-  endDiff.textContent =
-    (
-      last-first>=0
-      ? "+"
-      : ""
-    )+
-    (last-first).toFixed(1)+
-    " м";
-
-
-  maxDiff.textContent =
-    maxDifference.toFixed(1)+
-    " м";
-
-
-  chartSummary.textContent =
-    profile.length+
-    " точок • "+
-    profile[
-      profile.length-1
-    ].distance.toFixed(0)+
-    " м";
-
-}
-
-
-/* =========================================================
-   TABLE
-========================================================= */
-
-function drawTable(){
-
-  if(!profile.length){
-
-    table.innerHTML="";
-    return;
-
-  }
-
-
-  const first =
-    profile[0].elevation;
-
-
-  let html =
-    "<table>"+
-    "<thead>"+
-    "<tr>"+
-    "<th>#</th>"+
-    "<th>м</th>"+
-    "<th>Висота</th>"+
-    "<th>Δ</th>"+
-    "</tr>"+
-    "</thead>"+
-    "<tbody>";
-
-
-  profile.forEach(
-    (p,i)=>{
-
-      const diff =
-        p.elevation-first;
-
-
-      html +=
-        "<tr "+
-        "data-index='"+i+"'>"+
-
-        "<td>"+
-        (i+1)+
-        "</td>"+
-
-        "<td>"+
-        p.distance.toFixed(0)+
-        "</td>"+
-
-        "<td>"+
-        p.elevation.toFixed(1)+
-        "</td>"+
-
-        "<td>"+
-        (
-          diff>=0
-          ? "+"
-          : ""
-        )+
-        diff.toFixed(1)+
-        "</td>"+
-
-        "</tr>";
-
-    }
-  );
-
-
-  html +=
-    "</tbody></table>";
-
-
-  table.innerHTML =
-    html;
-
-
-  table
-    .querySelectorAll(
-      "tr[data-index]"
-    )
-    .forEach(
-      row=>{
-
-        row.addEventListener(
-          "click",
-          ()=>{
-
-            selectPoint(
-              Number(
-                row.dataset.index
-              )
-            );
-
-          }
-        );
-
-      }
-    );
-
-
-  updateTableSelection();
-
-}
-
-
-function updateTableSelection(){
-
-  table
-    .querySelectorAll(
-      "tr[data-index]"
-    )
-    .forEach(
-      row=>{
-
-        row.classList.toggle(
-          "selected",
-          Number(
-            row.dataset.index
-          )===selectedIndex
-        );
-
-      }
-    );
-
-}
-
-
-/* =========================================================
-   CHART SIZE
-========================================================= */
-
-function chartSize(){
-
-  const rect =
-    chartWrap.getBoundingClientRect();
-
-
-  const dpr =
-    window.devicePixelRatio ||
-    1;
-
-
-  chart.width =
-    Math.max(
-      1,
-      Math.round(
-        rect.width*dpr
-      )
-    );
-
-
-  chart.height =
-    Math.max(
-      1,
-      Math.round(
-        rect.height*dpr
-      )
-    );
-
-
-  chart.style.width =
-    rect.width+
-    "px";
-
-
-  chart.style.height =
-    rect.height+
-    "px";
-
-
-  const ctx =
-    chart.getContext(
-      "2d"
-    );
-
-
-  ctx.setTransform(
-    dpr,
-    0,
-    0,
-    dpr,
-    0,
-    0
-  );
-
-
-  return {
-    ctx,
-    width:rect.width,
-    height:rect.height
-  };
-
-}
-
-
-/* =========================================================
-   CHART
-========================================================= */
-
-function drawChart(){
-
-  const {
-    ctx,
-    width,
-    height
-  } =
-    chartSize();
-
-
-  ctx.clearRect(
-    0,
-    0,
-    width,
-    height
-  );
-
-
-  chartGeometry=[];
-
-
-  if(!profile.length){
-
-    chartInfo.textContent =
-      "Немає даних";
-
-    return;
-
-  }
-
-
-  const pad={
-    left:48,
-    right:14,
-    top:23,
-    bottom:27
-  };
-
-
-  const w =
-    width-
-    pad.left-
-    pad.right;
-
-
-  const h =
-    height-
-    pad.top-
-    pad.bottom;
-
-
-  const values =
-    profile.map(
-      p=>p.elevation
-    );
-
-
-  let min =
-    Math.min(...values);
-
-  let max =
-    Math.max(...values);
-
-
-  if(max-min<10){
-
-    const middle =
-      (min+max)/2;
-
-    min =
-      middle-5;
-
-    max =
-      middle+5;
-
-  }
-
-
-  const margin =
-    Math.max(
-      3,
-      (max-min)*.12
-    );
-
-
-  min-=margin;
-  max+=margin;
-
-
-  /* GRID */
-
-  ctx.strokeStyle =
-    "rgba(80,180,220,.10)";
-
-  ctx.lineWidth=1;
-
-
-  for(
-    let i=0;
-    i<=5;
-    i++
-  ){
-
-    const y =
-      pad.top+
-      h*i/5;
-
-
-    ctx.beginPath();
-
-    ctx.moveTo(
-      pad.left,
-      y
-    );
-
-    ctx.lineTo(
-      width-pad.right,
-      y
-    );
-
-    ctx.stroke();
-
-
-    const value =
-      max-
-      (max-min)*i/5;
-
-
-    ctx.fillStyle =
-      "#7894a9";
-
-    ctx.font =
-      "10px system-ui";
-
-    ctx.textAlign =
-      "right";
-
-
-    ctx.fillText(
-      value.toFixed(0)+
-      " м",
-      pad.left-6,
-      y+3
-    );
-
-  }
-
-
-  /* POINT COORDINATES */
-
-  profile.forEach(
-    (p,i)=>{
-
-      const x =
-        pad.left+
-        w*
-        i/
-        (profile.length-1);
-
-
-      const y =
-        pad.top+
-        (max-p.elevation)/
-        (max-min)*
-        h;
-
-
-      chartGeometry.push({
-        x,
-        y,
-        index:i
       });
 
+
+      lowerPts.reverse();
+
+
+      fresnelFillPath=
+        "M"+
+        upperPts.join(" L")+
+        " L"+
+        lowerPts.join(" L")+
+        " Z";
+
     }
-  );
-
-
-  function getPoint(i){
-
-    if(i<0){
-      return chartGeometry[0];
-    }
-
-    if(
-      i>=chartGeometry.length
-    ){
-      return chartGeometry[
-        chartGeometry.length-1
-      ];
-    }
-
-    return chartGeometry[i];
 
   }
 
 
-  /* ======================================================
-     SMOOTH CURVE
-  ====================================================== */
+  let dotsSvg="";
 
-  ctx.beginPath();
 
+  profileData.forEach((p,i)=>{
 
-  const first =
-    getPoint(0);
+    /*
+      Колір точки залежить від висоти.
+    */
 
-
-  ctx.moveTo(
-    first.x,
-    first.y
-  );
-
-
-  for(
-    let i=0;
-    i<chartGeometry.length-1;
-    i++
-  ){
-
-    const p0 =
-      getPoint(i-1);
-
-    const p1 =
-      getPoint(i);
-
-    const p2 =
-      getPoint(i+1);
-
-    const p3 =
-      getPoint(i+2);
-
-
-    const cp1x =
-      p1.x+
-      (p2.x-p0.x)/6;
-
-    const cp1y =
-      p1.y+
-      (p2.y-p0.y)/6;
-
-
-    const cp2x =
-      p2.x-
-      (p3.x-p1.x)/6;
-
-    const cp2y =
-      p2.y-
-      (p3.y-p1.y)/6;
-
-
-    ctx.bezierCurveTo(
-      cp1x,
-      cp1y,
-      cp2x,
-      cp2y,
-      p2.x,
-      p2.y
-    );
-
-  }
-
-
-  /* FILL */
-
-  ctx.lineTo(
-    chartGeometry[
-      chartGeometry.length-1
-    ].x,
-    pad.top+h
-  );
-
-
-  ctx.lineTo(
-    chartGeometry[0].x,
-    pad.top+h
-  );
-
-
-  ctx.closePath();
-
-
-  const gradient =
-    ctx.createLinearGradient(
-      0,
-      pad.top,
-      0,
-      pad.top+h
-    );
-
-
-  gradient.addColorStop(
-    0,
-    "rgba(0,234,255,.23)"
-  );
-
-  gradient.addColorStop(
-    1,
-    "rgba(0,234,255,.01)"
-  );
-
-
-  ctx.fillStyle =
-    gradient;
-
-  ctx.fill();
-
-
-  /* LINE AGAIN */
-
-  ctx.beginPath();
-
-
-  ctx.moveTo(
-    chartGeometry[0].x,
-    chartGeometry[0].y
-  );
-
-
-  for(
-    let i=0;
-    i<chartGeometry.length-1;
-    i++
-  ){
-
-    const p0 =
-      getPoint(i-1);
-
-    const p1 =
-      getPoint(i);
-
-    const p2 =
-      getPoint(i+1);
-
-    const p3 =
-      getPoint(i+2);
-
-
-    ctx.bezierCurveTo(
-
-      p1.x+
-      (p2.x-p0.x)/6,
-
-      p1.y+
-      (p2.y-p0.y)/6,
-
-      p2.x-
-      (p3.x-p1.x)/6,
-
-      p2.y-
-      (p3.y-p1.y)/6,
-
-      p2.x,
-      p2.y
-
-    );
-
-  }
-
-
-  ctx.strokeStyle =
-    "#00eaff";
-
-  ctx.lineWidth=2.5;
-
-  ctx.shadowColor =
-    "rgba(0,234,255,.75)";
-
-  ctx.shadowBlur=8;
-
-  ctx.stroke();
-
-  ctx.shadowBlur=0;
-
-
-  /* POINTS */
-
-  profile.forEach(
-    (p,i)=>{
-
-      const g =
-        chartGeometry[i];
-
-
-      const selected =
-        i===selectedIndex;
-
-
-      ctx.beginPath();
-
-      ctx.arc(
-        g.x,
-        g.y,
-        selected?6:3,
-        0,
-        Math.PI*2
+    const t=
+      (p.elevation-elevMin)/
+      Math.max(
+        .001,
+        elevMax-elevMin
       );
 
 
-      ctx.fillStyle =
-        selected
-        ? "#ffd34e"
-        : "#00eaff";
+    const hue=
+      190-
+      t*155;
 
 
-      ctx.fill();
+    const color=
+      "hsl("+hue+",90%,60%)";
 
 
-      if(selected){
+    dotsSvg+=
+      `<circle
+        cx="${X(i).toFixed(1)}"
+        cy="${Y(p.elevation).toFixed(1)}"
+        r="2.6"
+        fill="${color}"
+        stroke="#06131f"
+        stroke-width="1"
+        opacity=".95">
+      </circle>`;
 
-        ctx.strokeStyle =
-          "white";
+  });
 
-        ctx.lineWidth=2;
 
-        ctx.stroke();
+  svg.innerHTML=`
+
+    ${
+      (
+        showFresnel &&
+        fresnelFillPath
+      )
+      ?
+      `
+      <path
+        d="${fresnelFillPath}"
+        fill="rgba(255,209,102,.13)"
+        stroke="rgba(255,209,102,.4)"
+        stroke-width="1">
+      </path>
+      `
+      :
+      ""
+    }
+
+
+    <path
+      d="${area}"
+      fill="rgba(53,215,255,.08)"
+      stroke="none">
+    </path>
+
+
+    ${
+      lastRadio
+      ?
+      `
+      <path
+        d="${losPath}"
+        fill="none"
+        stroke="#ffd166"
+        stroke-width="1.6"
+        stroke-dasharray="6 4">
+      </path>
+      `
+      :
+      ""
+    }
+
+
+    <path
+      d="${terrainPath}"
+      fill="none"
+      stroke="#35d7ff"
+      stroke-width="3"
+      vector-effect="non-scaling-stroke">
+    </path>
+
+
+    ${dotsSvg}
+
+
+    <line
+      id="profCursorLine"
+      x1="0"
+      y1="0"
+      x2="0"
+      y2="${H-pad}"
+      stroke="#65ffb3"
+      stroke-width="1"
+      stroke-dasharray="3 3"
+      style="display:none">
+    </line>
+
+
+    <circle
+      id="profCursor"
+      cx="-10"
+      cy="-10"
+      r="6"
+      fill="#65ffb3"
+      stroke="#06131f"
+      stroke-width="2"
+      style="display:none">
+    </circle>
+
+  `;
+
+
+  svgScale={
+    X,
+    Y,
+    W,
+    H,
+    pad
+  };
+
+
+  const tbody=
+    document.getElementById(
+      "profileTable"
+    );
+
+
+  tbody.innerHTML=
+    profileData.map((p,i)=>{
+
+      const r=
+        lastRadio
+          ? lastRadio.points[i]
+          : null;
+
+
+      let losCell="—";
+
+
+      if(r){
+
+        losCell=
+          r.ratio>=1
+            ? "✅"
+            :
+          r.ratio>=.6
+            ? "⚠️"
+            :
+          r.ratio>=0
+            ? "⚠️"
+            :
+            "⛔";
 
       }
 
-    }
-  );
+
+      return `
+        <tr
+          onclick="selectProfilePoint(${i},'table')"
+          style="cursor:pointer">
+
+          <td>
+            ${formatDistance(p.distance)}
+          </td>
+
+          <td>
+            ${p.elevation.toFixed(1)} м
+          </td>
+
+          <td>
+            ${p.lat.toFixed(6)}
+          </td>
+
+          <td>
+            ${p.lon.toFixed(6)}
+          </td>
+
+          <td>
+            ${losCell}
+          </td>
+
+        </tr>
+      `;
+
+    }).join("");
 
 
-  /* X LABELS */
-
-  ctx.fillStyle =
-    "#7894a9";
-
-  ctx.font =
-    "10px system-ui";
-
-  ctx.textAlign =
-    "center";
-
-
-  const labels=5;
-
-
-  for(
-    let i=0;
-    i<=labels;
-    i++
+  if(
+    selectedIndex!=null &&
+    profileData[selectedIndex]
   ){
 
-    const index =
-      Math.round(
-        (profile.length-1)*
-        i/
-        labels
-      );
-
-
-    const g =
-      chartGeometry[index];
-
-
-    ctx.fillText(
-      profile[index]
-        .distance
-        .toFixed(0)+
-      " м",
-
-      g.x,
-
-      height-8
+    selectProfilePoint(
+      selectedIndex,
+      "refresh"
     );
 
   }
 
+}
+
+
+/* =========================================================
+   MAP PROFILE
+========================================================= */
+
+function drawProfileOnMap(){
 
   if(
-    selectedIndex>=0 &&
-    selectedIndex<profile.length
-  ){
-
-    const p =
-      profile[selectedIndex];
+    !map ||
+    !profileData.length
+  ) return;
 
 
-    chartInfo.innerHTML =
-      "Точка "+
-      (selectedIndex+1)+
-      " • "+
-      p.distance.toFixed(0)+
-      " м • "+
-      p.elevation.toFixed(1)+
-      " м";
+  const line=
+    profileData.map(p=>[
+      p.lat,
+      p.lon
+    ]);
+
+
+  if(window.profileMapLine){
+
+    window.profileMapLine
+      .setLatLngs(line);
 
   }else{
 
-    chartInfo.textContent =
-      "Торкнись графіка";
+    window.profileMapLine=
+      L.polyline(
+        line,
+        {
+          color:"#65ffb3",
+          weight:2,
+          dashArray:"5 5",
+          opacity:.85
+        }
+      ).addTo(map);
+
+  }
+
+
+  if(!profileMarkersLayer){
+
+    profileMarkersLayer=
+      L.layerGroup().addTo(map);
+
+  }
+
+
+  profileMarkersLayer.clearLayers();
+
+
+  /*
+    Кольорові точки за висотою.
+  */
+
+  const elevations=
+    profileData.map(
+      p=>p.elevation
+    );
+
+
+  const min=
+    Math.min(...elevations);
+
+  const max=
+    Math.max(...elevations);
+
+
+  profileData.forEach((p,i)=>{
+
+    const t=
+      (p.elevation-min)/
+      Math.max(
+        .001,
+        max-min
+      );
+
+
+    const hue=
+      190-
+      t*155;
+
+
+    const color=
+      "hsl("+hue+",90%,60%)";
+
+
+    const m=
+      L.circleMarker(
+        [p.lat,p.lon],
+        {
+          radius:4,
+          color,
+          weight:1,
+          fillColor:color,
+          fillOpacity:.9
+        }
+      );
+
+
+    m.bindTooltip(
+      "⛰️ "+
+      p.elevation.toFixed(1)+
+      " м<br>"+
+      "📏 "+
+      formatDistance(p.distance),
+      {
+        direction:"top",
+        opacity:.9
+      }
+    );
+
+
+    m.on(
+      "click",
+      ()=>{
+        selectProfilePoint(
+          i,
+          "map"
+        );
+      }
+    );
+
+
+    m.addTo(
+      profileMarkersLayer
+    );
+
+  });
+
+
+  if(!selectionMarker){
+
+    selectionMarker=
+      L.circleMarker(
+        line[0],
+        {
+          radius:8,
+          color:"#ffd166",
+          weight:3,
+          fillColor:"#ffd166",
+          fillOpacity:.9
+        }
+      );
+
+  }else{
+
+    selectionMarker
+      .setLatLng(line[0]);
 
   }
 
@@ -3679,318 +4579,1418 @@ function drawChart(){
 
 
 /* =========================================================
-   CHART CLICK
+   PROFILE SELECTION
 ========================================================= */
 
-let lastChartTap=0;
-
-
-function nearestChartPoint(
-  clientX,
-  clientY
+function selectProfilePoint(
+  i,
+  source
 ){
 
-  const rect =
-    chart.getBoundingClientRect();
+  if(!profileData[i])
+    return;
 
 
-  const x =
-    clientX-
-    rect.left;
-
-  const y =
-    clientY-
-    rect.top;
+  selectedIndex=i;
 
 
-  let best=-1;
-  let bestDistance=Infinity;
+  const p=
+    profileData[i];
 
 
-  chartGeometry.forEach(
-    g=>{
-
-      const dx =
-        g.x-x;
-
-      const dy =
-        g.y-y;
+  const r=
+    lastRadio
+      ? lastRadio.points[i]
+      : null;
 
 
-      const distance =
-        dx*dx+
-        dy*dy;
+  if(map){
+
+    if(!selectionMarker){
+
+      selectionMarker=
+        L.circleMarker(
+          [p.lat,p.lon],
+          {
+            radius:8,
+            color:"#ffd166",
+            weight:3,
+            fillColor:"#ffd166",
+            fillOpacity:.9
+          }
+        ).addTo(map);
+
+    }else{
+
+      selectionMarker
+        .setLatLng([
+          p.lat,
+          p.lon
+        ]);
 
 
       if(
-        distance<
-        bestDistance
+        !map.hasLayer(
+          selectionMarker
+        )
       ){
 
-        bestDistance=
-          distance;
-
-        best=
-          g.index;
+        selectionMarker.addTo(map);
 
       }
 
     }
-  );
 
 
-  return best;
+    if(
+      source!=="map" &&
+      !map.getBounds().contains([
+        p.lat,
+        p.lon
+      ])
+    ){
+
+      map.panTo([
+        p.lat,
+        p.lon
+      ]);
+
+    }
+
+  }
+
+
+  if(svgScale){
+
+    const cx=
+      svgScale.X(i);
+
+    const cy=
+      svgScale.Y(
+        p.elevation
+      );
+
+
+    const cursor=
+      document.getElementById(
+        "profCursor"
+      );
+
+
+    const line=
+      document.getElementById(
+        "profCursorLine"
+      );
+
+
+    if(cursor){
+
+      cursor.setAttribute(
+        "cx",
+        cx
+      );
+
+      cursor.setAttribute(
+        "cy",
+        cy
+      );
+
+      cursor.style.display=
+        "block";
+
+    }
+
+
+    if(line){
+
+      line.setAttribute(
+        "x1",
+        cx
+      );
+
+      line.setAttribute(
+        "x2",
+        cx
+      );
+
+      line.style.display=
+        "block";
+
+    }
+
+  }
+
+
+  const rows=
+    document.querySelectorAll(
+      "#profileTable tr"
+    );
+
+
+  rows.forEach((tr,idx)=>{
+
+    tr.style.background=
+      idx===i
+        ? "rgba(101,255,179,.14)"
+        : "";
+
+  });
+
+
+  const info=
+    document.getElementById(
+      "pointInfo"
+    );
+
+
+  if(info){
+
+    let losText=
+      "дані ще не розраховані";
+
+
+    if(r){
+
+      const label=
+        r.ratio>=1
+          ? "вільна LOS"
+          :
+        r.ratio>=.6
+          ? "часткове перекриття"
+          :
+        r.ratio>=0
+          ? "сильне перекриття"
+          :
+            "перекрито рельєфом";
+
+
+      losText=
+        label+
+        " ("+
+        Math.round(
+          r.ratio*100
+        )+
+        "% від зони Френеля)";
+
+    }
+
+
+    info.innerHTML=
+      "📍 "+
+      formatDistance(
+        p.distance
+      )+
+      " · ⛰️ "+
+      p.elevation.toFixed(1)+
+      " м"+
+      " · 📡 "+
+      losText+
+      " · "+
+      p.lat.toFixed(6)+
+      ", "+
+      p.lon.toFixed(6);
+
+  }
+
+
+  if(
+    source!=="table" &&
+    rows[i]
+  ){
+
+    rows[i].scrollIntoView({
+      block:"nearest"
+    });
+
+  }
 
 }
 
 
-chart.addEventListener(
-  "pointerdown",
-  e=>{
+/* =========================================================
+   CHART HOVER
+========================================================= */
 
-    if(!profile.length){
-      return;
-    }
+function handleChartHover(evt){
 
-
-    const now =
-      performance.now();
-
-
-    const doubleTap =
-      now-lastChartTap<
-      330;
+  if(
+    !profileData.length ||
+    !svgScale
+  ) return;
 
 
-    lastChartTap=now;
+  const svg=
+    document.getElementById(
+      "profileSvg"
+    );
 
 
-    const index =
-      nearestChartPoint(
-        e.clientX,
-        e.clientY
+  const rect=
+    svg.getBoundingClientRect();
+
+
+  const clientX=
+    evt.touches
+      ? evt.touches[0].clientX
+      : evt.clientX;
+
+
+  if(clientX==null)
+    return;
+
+
+  const relX=
+    (clientX-rect.left)/
+    rect.width*
+    svgScale.W;
+
+
+  let nearest=0;
+
+  let bestDist=Infinity;
+
+
+  profileData.forEach((p,i)=>{
+
+    const x=
+      svgScale.X(i);
+
+    const d=
+      Math.abs(
+        x-relX
       );
 
 
-    if(index<0){
-      return;
-    }
+    if(d<bestDist){
 
-
-    selectPoint(index);
-
-
-    if(doubleTap){
-
-      focusMapPoint(
-        index
-      );
+      bestDist=d;
+      nearest=i;
 
     }
 
-  }
-);
+  });
+
+
+  selectProfilePoint(
+    nearest,
+    "chart"
+  );
+
+}
 
 
 /* =========================================================
-   CALCULATE
+   SEARCH
 ========================================================= */
 
-async function calculateProfile(){
+async function searchPlace(){
 
-  if(calculating){
+  const q=
+    document
+      .getElementById(
+        "searchInput"
+      )
+      .value
+      .trim();
+
+
+  if(!q)
     return;
-  }
 
 
-  calculating=true;
+  const result=
+    document.getElementById(
+      "searchResult"
+    );
 
 
-  calculateBtn.disabled =
-    true;
-
-
-  calculateBtn.textContent =
-    "⏳ РОЗРАХУНОК…";
+  result.textContent=
+    "Пошук…";
 
 
   try{
 
-    profile =
-      buildProfile();
+    const url=
+      "https://nominatim.openstreetmap.org/search"+
+      "?format=jsonv2&limit=1&q="+
+      encodeURIComponent(q);
 
 
-    selectedIndex=-1;
-
-
-    const elevations =
-      await getElevations(
-        profile
+    const r=
+      await fetch(
+        url,
+        {
+          headers:{
+            "Accept":
+              "application/json"
+          }
+        }
       );
 
 
-    profile.forEach(
-      (p,i)=>{
+    const data=
+      await r.json();
 
-        p.elevation =
-          elevations[i];
 
-      }
+    if(!data.length){
+
+      result.textContent=
+        "Нічого не знайдено.";
+
+      return;
+
+    }
+
+
+    const p=data[0];
+
+
+    const lat=
+      Number(p.lat);
+
+    const lon=
+      Number(p.lon);
+
+
+    map.setView(
+      [lat,lon],
+      14
     );
 
 
-    drawMapProfile();
-
-    updateStatistics();
-
-    drawTable();
-
-    drawChart();
-
-
-    setStatus(
-      "ГОТОВО • "+
-      profile.length+
-      " точок • карта • смуга • графік.",
-      "success"
+    setMapPoint(
+      "A",
+      lat,
+      lon
     );
 
 
-  }catch(error){
-
-    console.error(error);
-
-
-    setStatus(
-      error.message ||
-      "Помилка побудови профілю.",
-      "error"
-    );
-
-  }finally{
-
-    calculating=false;
+    result.textContent=
+      p.display_name;
 
 
-    calculateBtn.disabled =
-      false;
+  }catch(e){
 
-
-    calculateBtn.textContent =
-      "📈 ПОБУДУВАТИ ПРОФІЛЬ";
+    result.textContent=
+      "Помилка пошуку.";
 
   }
 
 }
 
 
-calculateBtn.onclick =
-  calculateProfile;
-
-
 /* =========================================================
-   CLEAR
+   ANTENNAS
 ========================================================= */
 
-function clearProfile(){
+function operatorColor(op){
 
-  profile=[];
-
-  selectedIndex=-1;
-
-
-  clearProfileMap();
+  const s=
+    (op||"").toLowerCase();
 
 
-  startElev.textContent="—";
-  endElev.textContent="—";
-  minElev.textContent="—";
-  maxElev.textContent="—";
-  endDiff.textContent="—";
-  maxDiff.textContent="—";
+  if(
+    s.includes("kyivstar") ||
+    s.includes("київстар")
+  )
+    return "#2585ff";
 
 
-  selectedInfo.textContent =
-    "Точка ще не вибрана.";
+  if(
+    s.includes("vodafone") ||
+    s.includes("водафон")
+  )
+    return "#ff4658";
 
 
-  chartSummary.textContent =
-    "Немає профілю";
+  if(
+    s.includes("lifecell") ||
+    s.includes("лайфселл") ||
+    s.includes("life:)")
+  )
+    return "#ffd400";
 
 
-  chartInfo.textContent =
-    "Немає даних";
-
-
-  table.innerHTML="";
-
-
-  drawChart();
-
-
-  setStatus(
-    "Профіль очищено.",
-    ""
-  );
+  return "#65ffb3";
 
 }
 
-clearBtn.onclick =
-  clearProfile;
+
+async function toggleAntennas(){
+
+  antennasEnabled=
+    !antennasEnabled;
+
+
+  const btn=
+    document.getElementById(
+      "antennaBtn"
+    );
+
+
+  if(antennasEnabled){
+
+    btn.textContent=
+      "📡 Антени: УВІМК.";
+
+    antennaLayer.addTo(map);
+
+    loadAntennas();
+
+  }else{
+
+    btn.textContent=
+      "📡 Антени: ВИМК.";
+
+    antennaLayer.clearLayers();
+
+  }
+
+}
+
+
+async function loadAntennas(){
+
+  if(
+    !map ||
+    !antennasEnabled
+  ) return;
+
+
+  const status=
+    document.getElementById(
+      "antennaStatus"
+    );
+
+
+  status.textContent=
+    "Оновлення...";
+
+
+  const b=
+    map.getBounds();
+
+
+  const south=b.getSouth();
+  const west=b.getWest();
+  const north=b.getNorth();
+  const east=b.getEast();
+
+
+  if(map.getZoom()<11){
+
+    status.textContent=
+      "Збільште карту для антен.";
+
+    document
+      .getElementById(
+        "antennaCount"
+      )
+      .textContent="0";
+
+
+    antennaLayer.clearLayers();
+    antennaData=[];
+    renderAntennaList();
+
+
+    return;
+
+  }
+
+
+  const bbox=
+    south+
+    ","+
+    west+
+    ","+
+    north+
+    ","+
+    east;
+
+
+  const query=`
+
+[out:json][timeout:18];
+
+(
+  node["communication:mobile_phone"="yes"](${bbox});
+  way["communication:mobile_phone"="yes"](${bbox});
+  relation["communication:mobile_phone"="yes"](${bbox});
+
+  node["antenna:type"="mobile_phone"](${bbox});
+  way["antenna:type"="mobile_phone"](${bbox});
+
+  node["telecom"="antenna"](${bbox});
+  way["telecom"="antenna"](${bbox});
+
+  node["tower:type"="communication"](${bbox});
+  way["tower:type"="communication"](${bbox});
+
+  node["man_made"="communications_tower"](${bbox});
+  way["man_made"="communications_tower"](${bbox});
+
+  node["man_made"="mast"](${bbox});
+  way["man_made"="mast"](${bbox});
+);
+
+out center tags;
+
+`;
+
+
+  const endpoints=[
+
+    "https://overpass-api.de/api/interpreter",
+
+    "https://overpass.kumi.systems/api/interpreter"
+
+  ];
+
+
+  let data=null;
+
+
+  for(
+    const endpoint of endpoints
+  ){
+
+    try{
+
+      const r=
+        await fetch(
+          endpoint+
+          "?data="+
+          encodeURIComponent(query)
+        );
+
+
+      if(!r.ok)
+        continue;
+
+
+      data=
+        await r.json();
+
+
+      if(
+        data &&
+        Array.isArray(
+          data.elements
+        )
+      )
+        break;
+
+
+    }catch(e){
+
+      console.warn(
+        "Overpass:",
+        e
+      );
+
+    }
+
+  }
+
+
+  if(!data){
+
+    status.textContent=
+      "Не вдалося оновити.";
+
+    return;
+
+  }
+
+
+  antennaLayer.clearLayers();
+
+  antennaData=[];
+
+
+  const seen=new Set();
+
+  let count=0;
+
+
+  for(
+    const el of data.elements
+  ){
+
+    let lat=el.lat;
+    let lon=el.lon;
+
+
+    if(
+      (
+        lat==null ||
+        lon==null
+      ) &&
+      el.center
+    ){
+
+      lat=
+        el.center.lat;
+
+      lon=
+        el.center.lon;
+
+    }
+
+
+    if(
+      lat==null ||
+      lon==null
+    )
+      continue;
+
+
+    const key=
+      lat.toFixed(6)+
+      ":"+
+      lon.toFixed(6);
+
+
+    if(seen.has(key))
+      continue;
+
+
+    seen.add(key);
+
+
+    const tags=
+      el.tags||{};
+
+
+    const operator=
+      tags.operator||
+      tags["operator:name"]||
+      "Оператор не вказаний";
+
+
+    const height=
+      tags.height||
+      tags["tower:height"]||
+      "—";
+
+
+    const tech=[
+
+      tags["communication:mobile_phone"],
+
+      tags["communication:mobile_phone:operator"],
+
+      tags["mobile_phone"],
+
+      tags.telecom
+
+    ]
+      .filter(Boolean)
+      .join(", ");
+
+
+    const type=
+      tags["tower:type"]||
+      tags.man_made||
+      tags["antenna:type"]||
+      "антена/щогла";
+
+
+    antennaData.push({
+      lat,
+      lon,
+      operator,
+      height,
+      type,
+      tech
+    });
+
+
+    const color=
+      operatorColor(
+        operator
+      );
+
+
+    const icon=
+      L.divIcon({
+
+        className:"",
+
+        html:`
+
+          <div style="
+            width:11px;
+            height:11px;
+            border-radius:50%;
+            background:${color};
+            border:2px solid #062016;
+            box-shadow:0 0 8px ${color}AA;
+          "></div>
+
+        `,
+
+        iconSize:[
+          11,
+          11
+        ],
+
+        iconAnchor:[
+          5,
+          5
+        ]
+
+      });
+
+
+    const marker=
+      L.marker(
+        [lat,lon],
+        {icon}
+      );
+
+
+    marker.bindPopup(`
+
+      <div class="ant-popup">
+
+        <b>
+          📡 ${escapeHtml(operator)}
+        </b>
+
+        <br>
+
+        <b>Висота:</b>
+        ${escapeHtml(height)}
+
+        <br>
+
+        <b>Тип:</b>
+        ${escapeHtml(type)}
+
+        <br>
+
+        <b>Дані:</b>
+        ${escapeHtml(tech||"—")}
+
+        <br>
+
+        <b>Координати:</b>
+        <br>
+
+        ${lat.toFixed(6)},
+        ${lon.toFixed(6)}
+
+        <br>
+
+        <button
+          class="secondary"
+          style="
+            margin-top:5px;
+            font-size:10px;
+            padding:5px 7px
+          "
+          onclick="
+            setMapPoint('B',${lat},${lon});
+            setDirectionMode('ab');
+            useAB();
+          ">
+
+          Обрати B (RX)
+
+        </button>
+
+      </div>
+
+    `);
+
+
+    antennaLayer.addLayer(
+      marker
+    );
+
+
+    count++;
+
+  }
+
+
+  document
+    .getElementById(
+      "antennaCount"
+    )
+    .textContent=count;
+
+
+  status.textContent=
+    "Знайдено: "+
+    count+
+    ". Дані залежать від OpenStreetMap.";
+
+
+  renderAntennaList();
+
+}
+
+
+function renderAntennaList(){
+
+  const box=
+    document.getElementById(
+      "antennaListBox"
+    );
+
+
+  if(!box)
+    return;
+
+
+  if(!antennaData.length){
+
+    box.innerHTML=
+      `<div class="note">
+        Антени не знайдено.
+      </div>`;
+
+    return;
+
+  }
+
+
+  const refLat=
+    currentLat!=null
+      ? currentLat
+      : map.getCenter().lat;
+
+
+  const refLon=
+    currentLon!=null
+      ? currentLon
+      : map.getCenter().lng;
+
+
+  const withDist=
+    antennaData
+      .map(a=>({
+
+        ...a,
+
+        dist:
+          getDistance(
+            refLat,
+            refLon,
+            a.lat,
+            a.lon
+          ),
+
+        brg:
+          getBearing(
+            refLat,
+            refLon,
+            a.lat,
+            a.lon
+          )
+
+      }))
+      .sort(
+        (a,b)=>
+          a.dist-b.dist
+      )
+      .slice(0,15);
+
+
+  box.innerHTML=
+    withDist.map(a=>`
+
+      <div style="
+        border:1px solid #17384b;
+        border-left:3px solid ${operatorColor(a.operator)};
+        border-radius:7px;
+        padding:6px;
+        margin-bottom:4px;
+        background:#071622;
+        font-size:10px;
+        line-height:1.45;
+      ">
+
+        <b>
+          📡 ${escapeHtml(a.operator)}
+        </b>
+
+        <br>
+
+        ${formatDistance(a.dist)}
+        · ${Math.round(a.brg)}°
+        ${bearingName(a.brg)}
+
+        <br>
+
+        Тип:
+        ${escapeHtml(a.type)}
+
+        ·
+
+        Висота:
+        ${escapeHtml(a.height)}
+
+        <br>
+
+        <button
+          class="secondary"
+          style="
+            margin-top:4px;
+            font-size:9px;
+            padding:4px 6px
+          "
+          onclick="
+            setMapPoint('B',${a.lat},${a.lon});
+            setDirectionMode('ab');
+            useAB();
+          ">
+
+          Обрати B
+
+        </button>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+function escapeHtml(s){
+
+  return String(s)
+    .replaceAll(
+      "&",
+      "&amp;"
+    )
+    .replaceAll(
+      "<",
+      "&lt;"
+    )
+    .replaceAll(
+      ">",
+      "&gt;"
+    )
+    .replaceAll(
+      '"',
+      "&quot;"
+    );
+
+}
 
 
 /* =========================================================
-   RESIZE
+   NETWORK
 ========================================================= */
+
+function updateNetwork(){
+
+  const online=
+    navigator.onLine;
+
+
+  document
+    .getElementById(
+      "netOnline"
+    )
+    .textContent=
+      online
+        ? "Онлайн"
+        : "Офлайн";
+
+
+  const c=
+    navigator.connection;
+
+
+  if(!c){
+
+    document
+      .getElementById(
+        "netType"
+      )
+      .textContent="—";
+
+
+    document
+      .getElementById(
+        "netEffective"
+      )
+      .textContent="—";
+
+
+    document
+      .getElementById(
+        "netRtt"
+      )
+      .textContent="—";
+
+
+    return;
+
+  }
+
+
+  document
+    .getElementById(
+      "netType"
+    )
+    .textContent=
+      c.type||"—";
+
+
+  document
+    .getElementById(
+      "netEffective"
+    )
+    .textContent=
+      c.effectiveType||"—";
+
+
+  document
+    .getElementById(
+      "netRtt"
+    )
+    .textContent=
+      c.rtt!=null
+        ? c.rtt+" мс"
+        : "—";
+
+}
+
 
 window.addEventListener(
-  "resize",
-  ()=>{
-    if(
-      app.style.display!=="none"
-    ){
-      drawChart();
-    }
-  }
+  "online",
+  updateNetwork
+);
+
+
+window.addEventListener(
+  "offline",
+  updateNetwork
 );
 
 
 /* =========================================================
-   START
+   SAVE
 ========================================================= */
 
-if(
-  sessionStorage.getItem(
-    AUTH_KEY
-  )==="1"
-){
+function saveCurrent(){
 
-  lock.style.display =
-    "none";
+  if(!lastProfile){
 
-  app.style.display =
-    "block";
+    alert(
+      "Спочатку виконайте розрахунок."
+    );
 
-  setTimeout(
-    ()=>{
-      map.invalidateSize();
-      startGPS();
-      drawChart();
-    },
-    250
+    return;
+
+  }
+
+
+  const saved=
+    JSON.parse(
+      localStorage.getItem(
+        "terrainSaved54"
+      )||"[]"
+    );
+
+
+  saved.unshift({
+
+    date:
+      new Date()
+        .toLocaleString(
+          "uk-UA"
+        ),
+
+    lat:
+      lastProfile.lat,
+
+    lon:
+      lastProfile.lon,
+
+    bearing:
+      lastProfile.bearing,
+
+    distance:
+      lastProfile.distance,
+
+    points:
+      lastProfile.points,
+
+    h1:
+      Number(
+        document.getElementById(
+          "h1"
+        ).value
+      )||1.5,
+
+    h2:
+      Number(
+        document.getElementById(
+          "h2"
+        ).value
+      )||1.5,
+
+    freq:
+      document.getElementById(
+        "freq"
+      ).value
+
+  });
+
+
+  if(saved.length>30)
+    saved.length=30;
+
+
+  localStorage.setItem(
+    "terrainSaved54",
+    JSON.stringify(saved)
   );
 
-}else{
 
-  lock.style.display =
-    "flex";
+  alert(
+    "Розрахунок збережено."
+  );
 
-  app.style.display =
-    "none";
+
+  renderSaved();
 
 }
+
+
+function renderSaved(){
+
+  const box=
+    document.getElementById(
+      "savedList"
+    );
+
+
+  const saved=
+    JSON.parse(
+      localStorage.getItem(
+        "terrainSaved54"
+      )||"[]"
+    );
+
+
+  if(!saved.length){
+
+    box.textContent=
+      "Немає збережених розрахунків.";
+
+    return;
+
+  }
+
+
+  box.innerHTML=
+    saved.map((s,i)=>`
+
+      <div style="
+        border:1px solid #17384b;
+        border-radius:7px;
+        padding:7px;
+        margin-bottom:5px;
+        background:#071622;
+        font-size:10px;
+      ">
+
+        <b>${s.date}</b>
+
+        <br>
+
+        📍
+        ${Number(s.lat).toFixed(5)},
+        ${Number(s.lon).toFixed(5)}
+
+        <br>
+
+        🧭
+        ${Math.round(s.bearing)}°
+        ${bearingName(s.bearing)}
+
+        <br>
+
+        📏
+        ${formatDistance(s.distance)}
+
+        <br>
+
+        <button
+          class="secondary"
+          style="margin-top:4px"
+          onclick="restoreSaved(${i})">
+
+          Відкрити
+
+        </button>
+
+        <button
+          class="danger"
+          style="margin-top:4px"
+          onclick="deleteSaved(${i})">
+
+          Видалити
+
+        </button>
+
+      </div>
+
+    `).join("");
+
+}
+
+
+function restoreSaved(i){
+
+  const saved=
+    JSON.parse(
+      localStorage.getItem(
+        "terrainSaved54"
+      )||"[]"
+    );
+
+
+  const s=saved[i];
+
+
+  if(!s)
+    return;
+
+
+  currentLat=s.lat;
+  currentLon=s.lon;
+  currentBearing=s.bearing;
+
+
+  bearingSource="phone";
+
+
+  document
+    .getElementById("lat")
+    .textContent=
+      Number(s.lat).toFixed(6);
+
+
+  document
+    .getElementById("lon")
+    .textContent=
+      Number(s.lon).toFixed(6);
+
+
+  if(s.h1!=null)
+    document.getElementById(
+      "h1"
+    ).value=s.h1;
+
+
+  if(s.h2!=null)
+    document.getElementById(
+      "h2"
+    ).value=s.h2;
+
+
+  if(s.freq!=null)
+    document.getElementById(
+      "freq"
+    ).value=s.freq;
+
+
+  map.setView(
+    [s.lat,s.lon],
+    15
+  );
+
+
+  updateUserMarker();
+
+  updateCompassUI();
+
+  updateDirectionGraphic();
+
+
+  profileData=s.points;
+
+  lastProfile=s;
+
+  selectedIndex=null;
+
+
+  renderProfile();
+
+  drawProfileOnMap();
+
+
+  showTab(
+    "profileTab",
+    document.querySelector(
+      "nav button:nth-child(2)"
+    )
+  );
+
+}
+
+
+function deleteSaved(i){
+
+  const saved=
+    JSON.parse(
+      localStorage.getItem(
+        "terrainSaved54"
+      )||"[]"
+    );
+
+
+  saved.splice(i,1);
+
+
+  localStorage.setItem(
+    "terrainSaved54",
+    JSON.stringify(saved)
+  );
+
+
+  renderSaved();
+
+}
+
+
+/* =========================================================
+   LOAD
+========================================================= */
+
+window.addEventListener(
+  "load",
+  ()=>{
+
+    if(
+      sessionStorage.getItem(
+        "terrainProfileAuth54"
+      )==="1"
+    ){
+
+      setTimeout(
+        ()=>{
+          if(!map)
+            initApp();
+        },
+        100
+      );
+
+    }
+
+  }
+);
 
 </script>
 
 </body>
-              </html>
+      </html>
