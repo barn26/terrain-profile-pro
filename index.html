@@ -361,8 +361,9 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
       </div>
     </div>
     <div class="note" id="pointInfo" style="margin:5px 2px">Натисніть на графік або точку маршруту.</div>
+    <div class="note" id="antGraphLegend" style="margin:5px 2px 2px;font-weight:700"></div>
     <div class="profile"><svg id="profileSvg" viewBox="0 0 1000 300" preserveAspectRatio="none"></svg></div>
-    <div class="note" style="margin:5px 2px">Блакитна лінія — рельєф. Жовта пунктирна — LOS. Жовта зона — 1-ша зона Френеля.</div>
+    <div class="note" style="margin:5px 2px">Блакитна лінія — рельєф. Пунктирна LOS (колір = запас з обраною антеною: зелений/жовтий/червоний). Жовта зона — 1-ша зона Френеля. Мітка ⚡ — найгірша точка перекриття.</div>
     <div class="section" style="margin-top:6px">
       <div class="scroll">
         <table>
@@ -1103,7 +1104,7 @@ function renderProfile(){
     fullStatusEl.textContent="📡 "+lastRadio.status;
   }
 
-  renderAntennaVerdict();
+  const antV=renderAntennaVerdict();
 
   const svg=document.getElementById("profileSvg");
   const W=1000,H=300,pad=28;
@@ -1138,16 +1139,44 @@ function renderProfile(){
     dotsSvg+='<circle cx="'+X(i).toFixed(1)+'" cy="'+Y(p.elevation).toFixed(1)+'" r="2.6" fill="'+color+'" stroke="#06131f" stroke-width="1" opacity=".95"></circle>';
   });
 
+  // Колір LOS-лінії та маркер найгіршої точки залежать від обраної антени
+  const losColor=(antV&&antV.hasRadio)?antV.color:"#ffd166";
+  let worstMarkerSvg="";
+  if(lastRadio && antV && antV.hasRadio){
+    const wp=lastRadio.points[antV.worstIdx];
+    const wx=X(antV.worstIdx);
+    const wyTerrain=Y(wp.effTerrain);
+    const wyLos=Y(wp.losY);
+    const labelY=Math.min(wyTerrain,wyLos)-10;
+    const marginLabel=(antV.margin>=0?"+":"−")+Math.abs(antV.margin).toFixed(1)+" дБ";
+    worstMarkerSvg=
+      '<line x1="'+wx.toFixed(1)+'" y1="'+wyTerrain.toFixed(1)+'" x2="'+wx.toFixed(1)+'" y2="'+wyLos.toFixed(1)+'" stroke="'+losColor+'" stroke-width="1" stroke-dasharray="2 2" opacity=".8"></line>'+
+      '<circle cx="'+wx.toFixed(1)+'" cy="'+wyTerrain.toFixed(1)+'" r="5" fill="'+losColor+'" stroke="#06131f" stroke-width="1.5"></circle>'+
+      '<text x="'+wx.toFixed(1)+'" y="'+Math.max(12,labelY).toFixed(1)+'" fill="'+losColor+'" font-size="12" font-weight="700" text-anchor="middle" style="paint-order:stroke;stroke:#06131f;stroke-width:3px">⚡ '+marginLabel+'</text>';
+  }
+
   svg.innerHTML=
     ((showFresnel&&fresnelFillPath)?('<path d="'+fresnelFillPath+'" fill="rgba(255,209,102,.13)" stroke="rgba(255,209,102,.4)" stroke-width="1"></path>'):"")+
     '<path d="'+area+'" fill="rgba(53,215,255,.08)" stroke="none"></path>'+
-    (lastRadio?('<path d="'+losPath+'" fill="none" stroke="#ffd166" stroke-width="1.6" stroke-dasharray="6 4"></path>'):"")+
+    (lastRadio?('<path d="'+losPath+'" fill="none" stroke="'+losColor+'" stroke-width="1.8" stroke-dasharray="6 4"></path>'):"")+
     '<path d="'+terrainPath+'" fill="none" stroke="#35d7ff" stroke-width="3" vector-effect="non-scaling-stroke"></path>'+
     dotsSvg+
+    worstMarkerSvg+
     '<line id="profCursorLine" x1="0" y1="0" x2="0" y2="'+(H-pad)+'" stroke="#65ffb3" stroke-width="1" stroke-dasharray="3 3" style="display:none"></line>'+
     '<circle id="profCursor" cx="-10" cy="-10" r="6" fill="#65ffb3" stroke="#06131f" stroke-width="2" style="display:none"></circle>';
 
   svgScale={X,Y,W,H,pad};
+
+  const legendEl=document.getElementById("antGraphLegend");
+  if(legendEl){
+    if(antV && antV.hasRadio){
+      legendEl.innerHTML='<span style="display:inline-block;width:9px;height:9px;border-radius:50%;background:'+antV.color+';margin-right:5px;box-shadow:0 0 6px '+antV.color+'"></span>'+
+        '📡 '+escapeHtml(antV.antenna.name)+' · запас ≈ '+(antV.margin>=0?"+":"−")+Math.abs(antV.margin).toFixed(1)+' дБ';
+      legendEl.style.color=antV.color;
+    }else{
+      legendEl.textContent="";
+    }
+  }
 
   const tbody=document.getElementById("profileTable");
   tbody.innerHTML=profileData.map((p,i)=>{
@@ -1169,60 +1198,72 @@ function renderProfile(){
 /* =========================================================
    ВЕРДИКТ ПО АНТЕНІ: чи компенсує підсилення антени
    дифракційні втрати від рельєфу на цій трасі.
+   getAntennaVerdict() — чиста функція розрахунку (без DOM),
+   використовується і для бічної панелі, і для розмальовки графіка.
 ========================================================= */
-function renderAntennaVerdict(){
+function getAntennaVerdict(){
   const a=getSelectedAntenna();
-  const gainEl=document.getElementById("antGain");
-  const lossEl=document.getElementById("diffLoss");
-  const verdictEl=document.getElementById("antVerdict");
-  const barEl=document.getElementById("marginBarFill");
-  if(!gainEl||!lossEl||!verdictEl||!barEl) return;
-
-  if(!lastRadio){
-    gainEl.textContent=a.gain+" дБі";
-    lossEl.textContent="—";
-    verdictEl.textContent="Спочатку розрахуйте профіль (кнопка «📈 Розрахувати»).";
-    barEl.style.width="0%";
-    return;
-  }
+  if(!lastRadio) return {hasRadio:false,antenna:a};
 
   const deltaGain=a.gain-BASE_GAIN;         // виграш антени відносно вбудованої, дБ
   const loss=lastRadio.worstLossDb;         // оцінка дифракційних втрат рельєфу, дБ
   const margin=deltaGain-loss;              // підсумковий запас, дБ
 
-  gainEl.textContent=(a.id==="none"?"базова":("+"+deltaGain.toFixed(0)+" дБ"))+" ("+a.gain+" дБі)";
-  lossEl.textContent=loss>0?("−"+loss.toFixed(1)+" дБ"):"0 дБ (вільно)";
-
-  // шкала -20..+20 дБ запасу -> 0..100%
-  const pct=Math.max(0,Math.min(100,((margin+20)/40)*100));
-  barEl.style.width=pct.toFixed(0)+"%";
-
-  let color, text;
+  let color, text, level;
 
   if(lastRadio.minRatio>=0.6){
-    color="#65ffb3";
+    color="#65ffb3"; level="ok";
     text="📶 Геометрично траса й так відкрита (зона Френеля вільна на "+Math.round(Math.min(200,lastRadio.minRatio*100))+"%). Антена "+
       (a.id==="none"?"тут не критична, але":"")+" додасть запас швидкості й стабільності"+
       (a.id!=="none"?" (+"+deltaGain.toFixed(0)+" дБ підсилення)":"")+".";
   }else if(loss<=0.3){
-    color="#65ffb3";
+    color="#65ffb3"; level="ok";
     text="📶 Перекриття рельєфом мінімальне — сигнал повинен проходити навіть без антени.";
   }else if(margin>=6){
-    color="#65ffb3";
+    color="#65ffb3"; level="ok";
     text="✅ Антена «"+a.name+"» (+"+deltaGain.toFixed(0)+" дБ) з запасом перекриває оцінені втрати рельєфу (−"+loss.toFixed(1)+" дБ). Запас ≈ "+margin.toFixed(1)+" дБ — зв'язок має бути стабільним.";
   }else if(margin>=0){
-    color="#ffd166";
+    color="#ffd166"; level="warn";
     text="⚠️ Антена «"+a.name+"» ймовірно компенсує перекриття рельєфом, але із запасом усього ≈ "+margin.toFixed(1)+" дБ. Можливе просідання швидкості в негоду або на межі зони покриття.";
   }else if(margin>=-6){
-    color="#ffd166";
+    color="#ffd166"; level="warn";
     text="⚠️ Навіть з антеною «"+a.name+"» не вистачає приблизно "+Math.abs(margin).toFixed(1)+" дБ, щоб впевнено перекрити рельєф. Варто підняти щоглу (див. «Порадити висоту щогли») або обрати антену з вищим підсиленням.";
   }else{
-    color="#ff6b7a";
-    text="⛔ Навіть найпотужніша антена з цього переліку навряд чи витягне трасу — не вистачає ≈ "+Math.abs(margin).toFixed(1)+" дБ. Рельєф перекриває лінію занадто сильно. Потрібно або підняти щоглу (розрахунок нижче), або змінити точку встановлення."; 
+    color="#ff6b7a"; level="err";
+    text="⛔ Навіть найпотужніша антена з цього переліку навряд чи витягне трасу — не вистачає ≈ "+Math.abs(margin).toFixed(1)+" дБ. Рельєф перекриває лінію занадто сильно. Потрібно або підняти щоглу (розрахунок нижче), або змінити точку встановлення.";
   }
 
-  barEl.style.background=color;
-  verdictEl.innerHTML=text+(a.url?(' <a href="'+a.url+'" target="_blank" rel="noopener" style="color:'+color+'">Обрати цю антену на BozzLife →</a>'):"");
+  return {hasRadio:true,antenna:a,deltaGain,loss,margin,color,text,level,worstIdx:lastRadio.worstLossIdx};
+}
+
+function renderAntennaVerdict(){
+  const gainEl=document.getElementById("antGain");
+  const lossEl=document.getElementById("diffLoss");
+  const verdictEl=document.getElementById("antVerdict");
+  const barEl=document.getElementById("marginBarFill");
+  if(!gainEl||!lossEl||!verdictEl||!barEl) return null;
+
+  const v=getAntennaVerdict();
+
+  if(!v.hasRadio){
+    gainEl.textContent=v.antenna.gain+" дБі";
+    lossEl.textContent="—";
+    verdictEl.textContent="Спочатку розрахуйте профіль (кнопка «📈 Розрахувати»).";
+    barEl.style.width="0%";
+    return v;
+  }
+
+  gainEl.textContent=(v.antenna.id==="none"?"базова":("+"+v.deltaGain.toFixed(0)+" дБ"))+" ("+v.antenna.gain+" дБі)";
+  lossEl.textContent=v.loss>0?("−"+v.loss.toFixed(1)+" дБ"):"0 дБ (вільно)";
+
+  // шкала -20..+20 дБ запасу -> 0..100%
+  const pct=Math.max(0,Math.min(100,((v.margin+20)/40)*100));
+  barEl.style.width=pct.toFixed(0)+"%";
+  barEl.style.background=v.color;
+
+  verdictEl.innerHTML=v.text+(v.antenna.url?(' <a href="'+v.antenna.url+'" target="_blank" rel="noopener" style="color:'+v.color+'">Обрати цю антену на BozzLife →</a>'):"");
+
+  return v;
 }
 
 /* =========================================================
@@ -1581,4 +1622,4 @@ window.addEventListener("load",()=>{
 });
 </script>
 </body>
- </html>
+  </html>
