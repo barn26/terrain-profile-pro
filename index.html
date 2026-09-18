@@ -39,7 +39,6 @@
       overflow: hidden;
     }
 
-    /* Top Navigation Tabs */
     header {
       background: var(--panel-bg);
       border-bottom: 1px solid var(--border-color);
@@ -67,7 +66,6 @@
       border: 1px solid var(--border-color);
     }
 
-    /* Main Container */
     main {
       flex: 1;
       position: relative;
@@ -89,7 +87,6 @@
       flex-direction: column;
     }
 
-    /* Map Elements */
     #map {
       width: 100%;
       height: 100%;
@@ -117,7 +114,6 @@
       font-weight: bold;
     }
 
-    /* Controls Panel & Inputs */
     .controls-panel {
       padding: 12px;
       display: flex;
@@ -186,7 +182,6 @@
       cursor: pointer;
     }
 
-    /* Charts Container */
     .chart-box {
       width: 100%;
       background: var(--panel-bg);
@@ -203,7 +198,6 @@
       display: block;
     }
 
-    /* Table */
     .table-container {
       overflow-x: auto;
       max-height: 250px;
@@ -241,14 +235,8 @@
     .infoBox.warn { border-color: var(--warn); }
     .infoBox.bad { border-color: var(--danger); }
 
-    .bigRecommendation {
-      font-weight: 600;
-    }
-
-    .note {
-      font-size: 11px;
-      color: var(--text-muted);
-    }
+    .bigRecommendation { font-weight: 600; }
+    .note { font-size: 11px; color: var(--text-muted); }
 
     footer {
       background: var(--panel-bg);
@@ -283,7 +271,6 @@
     <div id="profileTab" class="tab-content">
       <div class="controls-panel">
         
-        <!-- Action Card -->
         <div class="card">
           <div class="card-title">
             <span>Аналіз траси та рельєфу</span>
@@ -326,7 +313,6 @@
           </div>
         </div>
 
-        <!-- Summary Stats Card -->
         <div class="card grid-2" style="font-size: 12px;">
           <div>Дистанція: <b id="profileDistance">—</b></div>
           <div>Точок: <b id="profilePoints">—</b></div>
@@ -338,12 +324,10 @@
           <div>Мін. зазор Френеля: <b id="fresnelMin">—</b></div>
         </div>
 
-        <!-- Radio Recommendation Box -->
         <div id="heightRecommendation" class="infoBox">
           <div class="bigRecommendation">Натисніть "Розрахувати" для побудови траси.</div>
         </div>
 
-        <!-- Visual Charts -->
         <div class="card">
           <div class="card-title">Профіль рельєфу (Height Map)</div>
           <div class="chart-box" style="height: 200px;">
@@ -358,7 +342,6 @@
           <div id="pointInfo" class="note" style="margin-top: 4px;">Клацніть на графік для вибору точки.</div>
         </div>
 
-        <!-- Detailed Table -->
         <div class="card">
           <div class="card-title">Таблиця висот та параметрів</div>
           <div class="table-container">
@@ -383,11 +366,10 @@
       </div>
     </div>
 
-    <!-- TAB 3: SETTINGS & TOOLS -->
+    <!-- TAB 3: SETTINGS -->
     <div id="settingsTab" class="tab-content">
       <div class="controls-panel">
         
-        <!-- Search Card -->
         <div class="card">
           <div class="card-title">Пошук населеного пункту / координат</div>
           <div style="display: flex; gap: 8px;">
@@ -397,7 +379,6 @@
           <div id="searchResult" class="note" style="margin-top: 6px;"></div>
         </div>
 
-        <!-- Antennas Info -->
         <div class="card">
           <div class="card-title">Вежі та антени зв'язку в області (OSM)</div>
           <div>Статус: <b id="antennaStatus">Вимкнено</b></div>
@@ -405,7 +386,6 @@
           <div id="antennaListBox" style="margin-top: 8px; max-height: 120px; overflow-y: auto;"></div>
         </div>
 
-        <!-- System & Network Status -->
         <div class="card">
           <div class="card-title">Мережа та система</div>
           <div class="grid-2" style="font-size: 12px;">
@@ -416,7 +396,6 @@
           </div>
         </div>
 
-        <!-- Saved Runs -->
         <div class="card">
           <div class="card-title">Збережені профілі</div>
           <button class="secondary" onclick="saveCurrent()">💾 Зберегти поточний профіль</button>
@@ -435,14 +414,11 @@
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 
   <script>
-    /* =========================================================
-       GLOBAL CONSTANTS & STATE
-    ========================================================= */
-    const EARTH = 6371000; // Earth radius in meters
-    const K_FACTOR = 4 / 3; // Standard atmospheric refraction factor
+    const EARTH = 6371000;
+    const K_FACTOR = 4 / 3;
     const RAD = 180 / Math.PI;
     const DEG = Math.PI / 180;
-    const FRESNEL_TARGET = 0.6; // 60% clearance target
+    const FRESNEL_TARGET = 0.6;
 
     let map, userMarker, userAccuracyCircle;
     let pointA = null, pointB = null;
@@ -462,9 +438,6 @@
     let bearingSource = "ab";
     let antennaData = [];
 
-    /* =========================================================
-       INITIALIZATION
-    ========================================================= */
     window.addEventListener("DOMContentLoaded", () => {
       initMap();
       setupCompass();
@@ -474,7 +447,6 @@
     });
 
     function initMap() {
-      // Default view: Lviv center
       map = L.map('map').setView([49.83826, 24.02324], 12);
 
       L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
@@ -507,9 +479,6 @@
       bearingSource = document.getElementById("bearingSource").value;
     }
 
-    /* =========================================================
-       MAP CLICK & POINTS MANAGEMENT
-    ========================================================= */
     function onMapClick(e) {
       if (bearingSource !== "ab") return;
 
@@ -548,9 +517,6 @@
       pointB = { lat: ll.lat, lon: ll.lng };
     }
 
-    /* =========================================================
-       GPS & GEOLOCATION
-    ========================================================= */
     function initGPS() {
       if (!navigator.geolocation) return;
 
@@ -594,9 +560,6 @@
       }
     }
 
-    /* =========================================================
-       COMPASS & ORIENTATION
-    ========================================================= */
     function setupCompass() {
       if (window.DeviceOrientationEvent) {
         window.addEventListener("deviceorientation", handleOrientation, true);
@@ -636,16 +599,13 @@
       if (!compassActive) return;
       let alpha = e.alpha;
       if (e.webkitCompassHeading) {
-        alpha = e.webkitCompassHeading; // iOS Support
+        alpha = e.webkitCompassHeading;
       }
       if (alpha != null) {
         currentBearing = alpha;
       }
     }
 
-    /* =========================================================
-       GEO CALCULATIONS & UTILS
-    ========================================================= */
     function getDistance(lat1, lon1, lat2, lon2) {
       const dLat = (lat2 - lat1) * DEG;
       const dLon = (lon2 - lon1) * DEG;
@@ -675,18 +635,6 @@
       return { lat: phi2 * RAD, lon: lambda2 * RAD };
     }
 
-    function normalizeBearing(bearing) {
-      return (bearing + 360) % 360;
-    }
-
-    function getBearing(lat1, lon1, lat2, lon2) {
-      const p1 = lat1 * DEG, p2 = lat2 * DEG;
-      const dl = (lon2 - lon1) * DEG;
-      const y = Math.sin(dl) * Math.cos(p2);
-      const x = Math.cos(p1) * Math.sin(p2) - Math.sin(p1) * Math.cos(p2) * Math.cos(dl);
-      return normalizeBearing(Math.atan2(y, x) * RAD);
-    }
-
     function formatDistance(meters) {
       if (meters >= 1000) {
         return (meters / 1000).toFixed(2) + " км";
@@ -694,9 +642,6 @@
       return Math.round(meters) + " м";
     }
 
-    /* =========================================================
-       PROFILE CALCULATION (OPEN-ELEVATION)
-    ========================================================= */
     async function calculateProfile() {
       let startLat, startLon, endLat, endLon;
 
@@ -793,9 +738,6 @@
       document.getElementById("avgElev").textContent = avg.toFixed(1) + " м";
     }
 
-    /* =========================================================
-       RADIO LINE & FRESNEL ZONE
-    ========================================================= */
     function recalcRadio() {
       if (!profileData.length) return;
 
@@ -818,13 +760,9 @@
         const d1 = p.dist;
         const d2 = totalDist - d1;
         
-        // Earth curvature correction (Effective radius K=4/3)
         const earthCurvatureCorrection = (d1 * d2) / (2 * K_FACTOR * EARTH);
-        
-        // Direct Line of Sight height at distance d1
         const losHeight = startAlt + (endAlt - startAlt) * (d1 / totalDist) - earthCurvatureCorrection;
         
-        // Radius of the 1st Fresnel zone
         const r1 = (d1 > 0 && d2 > 0) ? Math.sqrt((wavelength * d1 * d2) / totalDist) : 0;
         
         const clearance = losHeight - p.elevation;
@@ -908,9 +846,6 @@
       recBox.innerHTML = `<div>${textStatus}</div><div class="bigRecommendation" style="margin-top:4px;">${recText}</div>`;
     }
 
-    /* =========================================================
-       MAP RENDERING FOR PROFILE
-    ========================================================= */
     function drawProfileOnMap() {
       if (!profileMarkersLayer) return;
       profileMarkersLayer.clearLayers();
@@ -965,9 +900,6 @@
       }
     }
 
-    /* =========================================================
-       SVG CHARTS & TABLE RENDERING
-    ========================================================= */
     function renderProfile() {
       if (!profileData.length || !lastRadio) return;
 
@@ -993,7 +925,6 @@
       const getX = dist => padding + (dist / totalDist) * (width - 2 * padding);
       const getY = elev => height - padding - ((elev - minElev) / (maxElev - minElev)) * (height - 2 * padding);
 
-      // Grid Lines
       for (let i = 0; i <= 5; i++) {
         const yVal = minElev + (i / 5) * (maxElev - minElev);
         const yPos = getY(yVal);
@@ -1015,7 +946,6 @@
         svg.appendChild(text);
       }
 
-      // Terrain Path
       let d = `M ${getX(profileData[0].dist)} ${getY(profileData[0].elevation)}`;
       profileData.forEach(p => {
         d += ` L ${getX(p.dist)} ${getY(p.elevation)}`;
@@ -1035,7 +965,6 @@
       path.setAttribute("stroke-width", "2.5");
       svg.appendChild(path);
 
-      // Selection Marker Line
       if (selectedIndex != null && profileData[selectedIndex]) {
         const selP = profileData[selectedIndex];
         const selX = getX(selP.dist);
@@ -1087,7 +1016,6 @@
       const getX = dist => padding + (dist / totalDist) * (width - 2 * padding);
       const getY = val => height - padding - ((val - minVal) / (maxVal - minVal)) * (height - 2 * padding);
 
-      // Fresnel Area
       if (lastRadio.showFresnel) {
         let fresnelD = `M ${getX(rPoints[0].dist)} ${getY(rPoints[0].fresnelTop)}`;
         for (let i = 1; i < rPoints.length; i++) {
@@ -1107,7 +1035,6 @@
         svg.appendChild(fresnelPath);
       }
 
-      // LOS Line
       const losLine = document.createElementNS("http://www.w3.org/2000/svg", "line");
       losLine.setAttribute("x1", getX(rPoints[0].dist));
       losLine.setAttribute("y1", getY(rPoints[0].losHeight));
@@ -1117,7 +1044,6 @@
       losLine.setAttribute("stroke-width", "2");
       svg.appendChild(losLine);
 
-      // Terrain Path
       let terrD = `M ${getX(rPoints[0].dist)} ${getY(rPoints[0].elevation)}`;
       rPoints.forEach(p => {
         terrD += ` L ${getX(p.dist)} ${getY(p.elevation)}`;
@@ -1191,9 +1117,6 @@
       });
     }
 
-    /* =========================================================
-       ANTENNAS (OVERPASS API)
-    ========================================================= */
     function toggleAntennas() {
       antennasEnabled = !antennasEnabled;
       const btn = document.getElementById("antennaBtn");
@@ -1266,9 +1189,6 @@
       }
     }
 
-    /* =========================================================
-       SEARCH PLACE (NOMINATIM)
-    ========================================================= */
     async function searchPlace() {
       const query = document.getElementById("searchInput").value.trim();
       if (!query) return;
@@ -1294,9 +1214,6 @@
       }
     }
 
-    /* =========================================================
-       NETWORK STATUS
-    ========================================================= */
     function updateNetwork() {
       const online = navigator.onLine;
       document.getElementById("netOnline").textContent = online ? "Online" : "Offline";
@@ -1313,9 +1230,6 @@
     window.addEventListener("online", updateNetwork);
     window.addEventListener("offline", updateNetwork);
 
-    /* =========================================================
-       LOCAL STORAGE (SAVED PROFILES)
-    ========================================================= */
     function saveCurrent() {
       if (!profileData.length || !lastProfile) {
         alert("Спочатку розрахуйте профіль.");
@@ -1386,4 +1300,4 @@
     }
   </script>
 </body>
-    </html>
+  </html>
