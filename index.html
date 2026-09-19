@@ -82,8 +82,16 @@ button.neon-click:after{content:"";position:absolute;top:-60%;left:-35%;width:25
 .kpi strong{display:block;margin-top:2px;font-size:12px}
 .note{color:var(--muted);font-size:10px;line-height:1.35}
 .mapWrap{position:relative}
-#map{height:620px;min-height:420px;border-radius:9px;overflow:hidden;border:1px solid #1d4358;
-  box-shadow:inset 0 0 25px rgba(0,0,0,.2),0 0 15px rgba(53,215,255,.04)}
+#mapRotateClip{height:620px;min-height:420px;border-radius:9px;overflow:hidden;border:1px solid #1d4358;
+  box-shadow:inset 0 0 25px rgba(0,0,0,.2),0 0 15px rgba(53,215,255,.04);position:relative}
+#map{position:absolute;top:-25%;left:-25%;width:150%;height:150%;
+  transform-origin:50% 50%;transition:transform .15s linear}
+/* Leaflet розтягує controls на весь контейнер #map (150%) — повертаємо їх
+   у видиму (не обрізану) центральну частину, і компенсуємо обертання карти
+   окремим протиобертанням, щоб кнопки зуму й перемикач шарів лишались рівними. */
+#map .leaflet-control-container{top:16.6667%!important;left:16.6667%!important;
+  right:16.6667%!important;bottom:16.6667%!important;transform-origin:50% 50%}
+.rotateBtn{position:absolute;z-index:600;right:6px;bottom:6px;pointer-events:auto}
 .leaflet-control-zoom{border:none!important;box-shadow:none!important;margin-top:48px!important;margin-left:6px!important}
 .leaflet-control-zoom a{width:29px!important;height:29px!important;line-height:27px!important;font-size:17px!important;
   background:rgba(5,16,26,.9)!important;color:#dcefff!important;border:1px solid #24546b!important}
@@ -145,7 +153,7 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
 @media(max-width:850px){
   .grid{grid-template-columns:1fr}
   .left{order:2}
-  #map{height:57vh;min-height:390px}
+  #mapRotateClip{height:57vh;min-height:390px}
   .panel{padding:6px}
   .section{padding:6px}
 }
@@ -157,7 +165,7 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
   .status{max-width:150px}
   .badge{font-size:9px;padding:3px 5px}
   nav button{padding:5px 7px;font-size:10px}
-  #map{height:59vh;min-height:380px}
+  #mapRotateClip{height:59vh;min-height:380px}
   .compass{width:180px;height:180px}
   .tick{transform-origin:50% 83px}
   .leaflet-control-zoom{margin-top:43px!important}
@@ -348,7 +356,7 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
           <div class="hud">📡 <strong id="antennaCount">0</strong></div>
         </div>
       </div>
-      <div id="map"></div>
+      <div id="mapRotateClip"><div id="map"></div></div>
     </div>
     <div class="row" style="margin-top:6px">
       <button class="secondary full" id="mapRotateBtn" onclick="toggleMapRotation()">🧭 Курс вгору (обертати карту): ВИМК.</button>
@@ -358,6 +366,7 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
         <b>🧭 Напрямок:</b> синій промінь показує напрямок телефона.<br>
         <b>⛰️ Рельєф:</b> топографічний шар показує висотні області кольором.<br>
         <b>🎖️ Військова (топо):</b> Esri World Topo Map — контурні лінії й рельєф у стилі топографічних карт.<br>
+        <b>🪖 Генштаб СРСР:</b> класичні топокарти (1:50 000/1:100 000) з лісом, ЛЕП, ґрунтовими дорогами й точними висотними відмітками — дані 50-70-річної давності, сторонній тайл-сервіс без гарантій доступності.<br>
         <b>🌄 Тінювання рельєфу:</b> додатковий напівпрозорий шар — світло/тінь від "сонця", щоб об'ємно бачити пагорби та яри навіть на плоскій карті (вмикається окремо, галочкою в списку шарів праворуч вгорі).<br>
         <b>🛰️ Гібрид:</b> супутникове зображення + дороги + назви.<br>
         <b>🧭 Курс вгору:</b> карта обертається так, щоб "вгору" завжди був напрямок, куди дивиться телефон (як у навігаторі). Поки увімкнено, ручне перетягування карти вимкнено — вона сама центрується по GPS; вимкніть режим, щоб знову вільно пересувати карту й ставити точки A/B.
@@ -642,9 +651,11 @@ function initApp(){
   const topo=L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap © OpenStreetMap contributors"});
   const hillshade=L.tileLayer("https://tiles.wmflabs.org/hillshading/{z}/{x}/{y}.png",{maxZoom:17,opacity:.42,attribution:"© OpenStreetMap contributors"});
   const military=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, HERE, Garmin, FAO, NOAA, USGS"});
+  const genshtab500=L.tileLayer("https://tiles.nakarte.me/ggc500/{z}/{x}/{y}",{tms:true,minZoom:2,maxZoom:17,maxNativeZoom:15,attribution:"Держгеокадастр/Генштаб СРСР (1:50 000), тайли: tiles.nakarte.me — сторонній сервіс без гарантій доступності"});
+  const genshtab1000=L.tileLayer("https://tiles.nakarte.me/ggc1000/{z}/{x}/{y}",{tms:true,minZoom:2,maxZoom:16,maxNativeZoom:14,attribution:"Генштаб СРСР (1:100 000), тайли: tiles.nakarte.me — сторонній сервіс без гарантій доступності"});
 
   L.control.layers(
-    {"🗺️ Звичайна карта":osm,"🛰️ Гібрид":hybrid,"⛰️ Рельєф кольором":topo,"🎖️ Військова (топо)":military},
+    {"🗺️ Звичайна карта":osm,"🛰️ Гібрид":hybrid,"⛰️ Рельєф кольором":topo,"🎖️ Військова (топо)":military,"🪖 Генштаб СРСР 1:50 000":genshtab500,"🪖 Генштаб СРСР 1:100 000":genshtab1000},
     {"🌄 Тінювання рельєфу":hillshade},
     {collapsed:true,position:"topright"}
   ).addTo(map);
@@ -835,14 +846,33 @@ function applyCalibration(h){
   r=normalizeBearing(r+calibrationOffsetDeg);
   return r;
 }
+function saveCompassCalibration(){
+  try{ localStorage.setItem("terrainCompassCal54",JSON.stringify({inv:compassInverted,off:calibrationOffsetDeg})); }catch(e){}
+}
+function loadCompassCalibration(){
+  try{
+    const raw=localStorage.getItem("terrainCompassCal54");
+    if(!raw) return;
+    const c=JSON.parse(raw);
+    if(typeof c.inv==="boolean") compassInverted=c.inv;
+    if(typeof c.off==="number"&&isFinite(c.off)) calibrationOffsetDeg=c.off;
+    const invBtn=document.getElementById("compassInvertBtn");
+    if(invBtn) invBtn.textContent="🔃 Інвертувати (дзеркально): "+(compassInverted?"УВІМК.":"ВИМК.");
+    const offInput=document.getElementById("compassOffsetInput");
+    if(offInput) offInput.value=calibrationOffsetDeg.toFixed(0);
+  }catch(e){}
+}
+loadCompassCalibration();
 function toggleCompassInvert(){
   compassInverted=!compassInverted;
   document.getElementById("compassInvertBtn").textContent="🔃 Інвертувати (дзеркально): "+(compassInverted?"УВІМК.":"ВИМК.");
   compassSamplesReset();
+  saveCompassCalibration();
 }
 function setCompassOffset(v){
   calibrationOffsetDeg=Number(v)||0;
   compassSamplesReset();
+  saveCompassCalibration();
 }
 function toggleGpsCalibration(){
   const btn=document.getElementById("calibBtn");
@@ -874,6 +904,7 @@ function toggleGpsCalibration(){
     document.getElementById("compassInvertBtn").textContent="🔃 Інвертувати (дзеркально): "+(compassInverted?"УВІМК.":"ВИМК.");
     document.getElementById("compassOffsetInput").value=calibrationOffsetDeg.toFixed(0);
     compassSamplesReset();
+    saveCompassCalibration();
     statusEl.textContent="✅ Відкалібровано: пройдено "+Math.round(dist)+" м, напрямок руху "+Math.round(travelBearing)+"°. Інверсія: "+(compassInverted?"так":"ні")+", корекція "+calibrationOffsetDeg.toFixed(0)+"°.";
   }
 }
@@ -946,8 +977,12 @@ function toggleMapRotation(){
   const btn=document.getElementById("mapRotateBtn");
   if(btn) btn.textContent="🧭 Курс вгору (обертати карту): "+(mapRotationEnabled?"УВІМК.":"ВИМК.");
   if(map){
-    if(mapRotationEnabled) map.dragging.disable();
-    else map.dragging.enable();
+    if(mapRotationEnabled){
+      map.dragging.disable();
+      if(currentLat!=null) map.panTo([currentLat,currentLon],{animate:false});
+    }else{
+      map.dragging.enable();
+    }
   }
   updateMapRotation();
 }
@@ -2045,30 +2080,4 @@ function restoreSaved(i){
   document.getElementById("lat").textContent=Number(s.lat).toFixed(6);
   document.getElementById("lon").textContent=Number(s.lon).toFixed(6);
   if(s.h1!=null) document.getElementById("h1").value=s.h1;
-  if(s.h2!=null) document.getElementById("h2").value=s.h2;
-  if(s.freq!=null) document.getElementById("freq").value=s.freq;
-  if(s.antenna){ selectedAntennaId=s.antenna; const sel=document.getElementById("antennaSelect"); if(sel) sel.value=s.antenna; renderAntennaCard(); }
-
-  map.setView([s.lat,s.lon],15);
-  updateUserMarker(); updateCompassUI(); updateDirectionGraphic();
-
-  profileData=s.points; lastProfile=s; selectedIndex=null;
-  renderProfile(); drawProfileOnMap();
-  showTab("profileTab",document.querySelector("nav button:nth-child(2)"));
-}
-function deleteSaved(i){
-  const saved=JSON.parse(localStorage.getItem("terrainSaved54")||"[]");
-  saved.splice(i,1);
-  localStorage.setItem("terrainSaved54",JSON.stringify(saved));
-  renderSaved();
-}
-
-/* ========================================================= LOAD ========================================================= */
-window.addEventListener("load",()=>{
-  if(sessionStorage.getItem("terrainProfileAuth54")==="1"){
-    setTimeout(()=>{ if(!map) initApp(); },100);
-  }
-});
-</script>
-</body>
-                                                                                           </html>
+  if(s.h2!=null) documen
