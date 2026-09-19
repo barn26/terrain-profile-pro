@@ -341,15 +341,26 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
           <div class="hud">🧭 <strong id="hudBearing">—</strong></div>
           <div class="hud">📐 <strong id="hudDirection">—</strong></div>
         </div>
-        <div class="hud">📡 <strong id="antennaCount">0</strong></div>
+        <div class="hudGroup">
+          <div class="hud" id="northHud" style="text-align:center;line-height:1.1">
+            <span id="northArrow" style="display:inline-block;transition:transform .15s linear">🔺</span><br><small>N</small>
+          </div>
+          <div class="hud">📡 <strong id="antennaCount">0</strong></div>
+        </div>
       </div>
       <div id="map"></div>
+    </div>
+    <div class="row" style="margin-top:6px">
+      <button class="secondary full" id="mapRotateBtn" onclick="toggleMapRotation()">🧭 Курс вгору (обертати карту): ВИМК.</button>
     </div>
     <div class="section" style="margin-top:6px">
       <div class="note">
         <b>🧭 Напрямок:</b> синій промінь показує напрямок телефона.<br>
         <b>⛰️ Рельєф:</b> топографічний шар показує висотні області кольором.<br>
-        <b>🛰️ Гібрид:</b> супутникове зображення + дороги + назви.
+        <b>🎖️ Військова (топо):</b> Esri World Topo Map — контурні лінії й рельєф у стилі топографічних карт.<br>
+        <b>🌄 Тінювання рельєфу:</b> додатковий напівпрозорий шар — світло/тінь від "сонця", щоб об'ємно бачити пагорби та яри навіть на плоскій карті (вмикається окремо, галочкою в списку шарів праворуч вгорі).<br>
+        <b>🛰️ Гібрид:</b> супутникове зображення + дороги + назви.<br>
+        <b>🧭 Курс вгору:</b> карта обертається так, щоб "вгору" завжди був напрямок, куди дивиться телефон (як у навігаторі). Поки увімкнено, ручне перетягування карти вимкнено — вона сама центрується по GPS; вимкніть режим, щоб знову вільно пересувати карту й ставити точки A/B.
       </div>
     </div>
   </div>
@@ -439,6 +450,21 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
       <button class="primary full" onclick="enableCompass()">🧭 Запустити датчик</button>
       <p class="note">Компас використовує згладжування та відсікання дрібних коливань. Це зменшує тремтіння показника, але зберігає реакцію на реальний поворот телефона.</p>
     </div>
+
+    <div class="section">
+      <h3>🛠️ Калібрування компаса</h3>
+      <p class="note">Різні телефони й браузери по-різному віддають дані датчика — інколи сторони світу справді визначаються дзеркально або зі зсувом. Це не помилка застосунку, а особливість конкретного пристрою/браузера — виправте це тут один раз.</p>
+      <div class="row">
+        <button class="secondary full" id="compassInvertBtn" onclick="toggleCompassInvert()">🔃 Інвертувати (дзеркально): ВИМК.</button>
+      </div>
+      <div class="row">
+        <input id="compassOffsetInput" type="number" step="1" value="0" placeholder="Ручна корекція, °" onchange="setCompassOffset(this.value)">
+      </div>
+      <div class="row">
+        <button class="primary full" id="calibBtn" onclick="toggleGpsCalibration()">📍 Почати калібрування по GPS</button>
+      </div>
+      <p class="note" id="calibStatus">Найточніший спосіб: увімкніть «GPS LIVE» (вкладка «Карта»), натисніть «Почати калібрування», пройдіть 15-20 м прямо вперед, тримаючи телефон як зазвичай, і натисніть кнопку ще раз — застосунок порівняє напрямок вашого реального руху (з GPS) з показником компаса і сам порахує потрібну корекцію.</p>
+    </div>
   </div>
 
   <div id="networkTab" class="hidden">
@@ -490,6 +516,9 @@ let profileMarkersLayer=null, selectionMarker=null;
 let svgScale=null, selectedIndex=null;
 let placingPoint=null;
 let lastScan=null;
+let mapRotationEnabled=false, mapRotationDeg=0;
+let calibrationOffsetDeg=0, compassInverted=false;
+let gpsCalibrating=false, gpsCalibStart=null;
 
 const DEG=Math.PI/180, RAD=180/Math.PI;
 const EARTH=6371000, K_FACTOR=4/3;
@@ -612,9 +641,10 @@ function initApp(){
   const hybrid=L.layerGroup([satellite,hybridLabels]);
   const topo=L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap © OpenStreetMap contributors"});
   const hillshade=L.tileLayer("https://tiles.wmflabs.org/hillshading/{z}/{x}/{y}.png",{maxZoom:17,opacity:.42,attribution:"© OpenStreetMap contributors"});
+  const military=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, HERE, Garmin, FAO, NOAA, USGS"});
 
   L.control.layers(
-    {"🗺️ Звичайна карта":osm,"🛰️ Гібрид":hybrid,"⛰️ Рельєф кольором":topo},
+    {"🗺️ Звичайна карта":osm,"🛰️ Гібрид":hybrid,"⛰️ Рельєф кольором":topo,"🎖️ Військова (топо)":military},
     {"🌄 Тінювання рельєфу":hillshade},
     {collapsed:true,position:"topright"}
   ).addTo(map);
@@ -623,8 +653,14 @@ function initApp(){
   profileMarkersLayer=L.layerGroup().addTo(map);
 
   map.on("click",e=>{
-    if(placingPoint==="A"){ setMapPoint("A",e.latlng.lat,e.latlng.lng); placingPoint=null; }
-    else if(placingPoint==="B"){ setMapPoint("B",e.latlng.lat,e.latlng.lng); placingPoint=null; }
+    if(!placingPoint) return;
+    let latlng=e.latlng;
+    if(mapRotationDeg){
+      const corrected=correctedLatLngFromEvent(e.originalEvent);
+      if(corrected) latlng=corrected;
+    }
+    if(placingPoint==="A"){ setMapPoint("A",latlng.lat,latlng.lng); placingPoint=null; }
+    else if(placingPoint==="B"){ setMapPoint("B",latlng.lat,latlng.lng); placingPoint=null; }
   });
 
   map.on("moveend",()=>{
@@ -679,6 +715,7 @@ function gpsSuccess(pos){
   setGpsStatus(isFinite(currentAccuracy)?Math.round(currentAccuracy)+" м":"OK","ok");
   updateUserMarker();
   if(bearingSource==="phone" && currentBearing!=null) updateDirectionGraphic();
+  if(mapRotationEnabled && map) map.panTo([currentLat,currentLon],{animate:false});
 }
 function gpsError(err){
   let text="Помилка GPS";
@@ -759,6 +796,7 @@ function handleOrientation(e){
   heading=normalizeBearing(heading);
   heading=applyScreenCorrection(heading);
   rawHeading=heading;
+  heading=applyCalibration(heading);
 
   if(!headingInitialized){ stableHeading=heading; headingInitialized=true; }
   else{
@@ -781,6 +819,64 @@ function applyScreenCorrection(heading){
 }
 function shortestAngleDifference(from,to){ return ((to-from+540)%360)-180; }
 function compassSamplesReset(){ headingInitialized=false; stableHeading=null; }
+
+/* =========================================================
+   КАЛІБРУВАННЯ КОМПАСА.
+   Різні телефони/браузери по-різному віддають alpha/webkitCompassHeading
+   (деякі — дзеркально, деякі зі сталим зсувом). Замість того, щоб
+   вгадувати "правильну" формулу для всіх пристроїв одразу (гарантії
+   без реального тестування на конкретному телефоні немає), даємо
+   ручне підстроювання: інверсія + зсув у градусах, або автоматичний
+   розрахунок зсуву порівнянням напрямку реального руху (GPS) з
+   показником компаса.
+========================================================= */
+function applyCalibration(h){
+  let r=compassInverted?normalizeBearing(360-h):h;
+  r=normalizeBearing(r+calibrationOffsetDeg);
+  return r;
+}
+function toggleCompassInvert(){
+  compassInverted=!compassInverted;
+  document.getElementById("compassInvertBtn").textContent="🔃 Інвертувати (дзеркально): "+(compassInverted?"УВІМК.":"ВИМК.");
+  compassSamplesReset();
+}
+function setCompassOffset(v){
+  calibrationOffsetDeg=Number(v)||0;
+  compassSamplesReset();
+}
+function toggleGpsCalibration(){
+  const btn=document.getElementById("calibBtn");
+  const statusEl=document.getElementById("calibStatus");
+  if(!gpsCalibrating){
+    if(currentLat==null){ alert("Спочатку отримайте GPS-положення (вкладка «Карта» → «📍 Моє місце»)."); return; }
+    gpsCalibStart={lat:currentLat,lon:currentLon};
+    gpsCalibrating=true;
+    btn.textContent="✅ Завершити калібрування (я вже пройшов ~20 м)";
+    statusEl.textContent="Тепер пройдіть прямо ~15-20 м, тримаючи телефон як зазвичай (не обертайте його), і натисніть цю кнопку ще раз.";
+  }else{
+    gpsCalibrating=false;
+    btn.textContent="📍 Почати калібрування по GPS";
+    if(currentLat==null||gpsCalibStart==null){ statusEl.textContent="Немає свіжих GPS-даних для завершення калібрування."; return; }
+    const dist=getDistance(gpsCalibStart.lat,gpsCalibStart.lon,currentLat,currentLon);
+    if(dist<8){ statusEl.textContent="Пройдено замало ("+Math.round(dist)+" м). Потрібно хоча б 8-10 м по прямій — увімкніть «GPS LIVE» і спробуйте ще раз."; return; }
+    if(rawHeading==null){ statusEl.textContent="Компас ще не дав жодного показника. Натисніть «Увімкнути компас» і спробуйте ще раз."; return; }
+
+    const travelBearing=getBearing(gpsCalibStart.lat,gpsCalibStart.lon,currentLat,currentLon);
+    let bestOffset=0,bestErr=Infinity,bestInvert=false;
+    [false,true].forEach(inv=>{
+      const base=inv?normalizeBearing(360-rawHeading):rawHeading;
+      let off=((travelBearing-base+540)%360)-180;
+      if(Math.abs(off)<bestErr){ bestErr=Math.abs(off); bestOffset=off; bestInvert=inv; }
+    });
+
+    compassInverted=bestInvert;
+    calibrationOffsetDeg=bestOffset;
+    document.getElementById("compassInvertBtn").textContent="🔃 Інвертувати (дзеркально): "+(compassInverted?"УВІМК.":"ВИМК.");
+    document.getElementById("compassOffsetInput").value=calibrationOffsetDeg.toFixed(0);
+    compassSamplesReset();
+    statusEl.textContent="✅ Відкалібровано: пройдено "+Math.round(dist)+" м, напрямок руху "+Math.round(travelBearing)+"°. Інверсія: "+(compassInverted?"так":"ні")+", корекція "+calibrationOffsetDeg.toFixed(0)+"°.";
+  }
+}
 
 /* ========================================================= COMPASS UI ========================================================= */
 function buildCompass(){
@@ -826,6 +922,7 @@ function updateCompassUI(){
   const arrow=document.getElementById("compassArrow");
   if(arrow) arrow.style.transform="rotate("+b+"deg)";
   document.getElementById("compassBadge").textContent="🧭 "+b.toFixed(1)+"°";
+  updateMapRotation();
 }
 
 /* ========================================================= BEARING ========================================================= */
@@ -834,6 +931,68 @@ function bearingName(b){
   if(b==null) return "—";
   const names=["Пн","ПнСх","Сх","ПдСх","Пд","ПдЗх","Зх","ПнЗх"];
   return names[Math.round(b/45)%8];
+}
+
+/* =========================================================
+   КАРТА "КУРС ВГОРУ": обертаємо DOM-контейнер карти (CSS transform)
+   так, щоб напрямок телефона завжди дивився вгору екрана, і
+   контр-обертаємо елементи керування Leaflet, щоб вони лишались
+   рівними. Оскільки Leaflet рахує кліки у своїй "неповернутій"
+   системі координат, для точок A/B рахуємо поправку вручну —
+   див. correctedLatLngFromEvent().
+========================================================= */
+function toggleMapRotation(){
+  mapRotationEnabled=!mapRotationEnabled;
+  const btn=document.getElementById("mapRotateBtn");
+  if(btn) btn.textContent="🧭 Курс вгору (обертати карту): "+(mapRotationEnabled?"УВІМК.":"ВИМК.");
+  if(map){
+    if(mapRotationEnabled) map.dragging.disable();
+    else map.dragging.enable();
+  }
+  updateMapRotation();
+}
+function updateMapRotation(){
+  if(!map) return;
+  const container=map.getContainer();
+  let deg=0;
+  if(mapRotationEnabled && bearingSource==="phone" && currentBearing!=null) deg=-currentBearing;
+  mapRotationDeg=deg;
+  container.style.transformOrigin="center center";
+  container.style.transform=deg?("rotate("+deg+"deg)"):"";
+  const ctrl=container.querySelector(".leaflet-control-container");
+  if(ctrl){
+    ctrl.style.transformOrigin="center center";
+    ctrl.style.transform=deg?("rotate("+(-deg)+"deg)"):"";
+  }
+  const northArrow=document.getElementById("northArrow");
+  if(northArrow) northArrow.style.transform="rotate("+deg+"deg)";
+}
+function correctedLatLngFromEvent(domEvent){
+  if(!map||!domEvent) return null;
+  const mapEl=map.getContainer();
+  const wrapEl=mapEl.parentElement;
+  if(!wrapEl) return null;
+  const wrapRect=wrapEl.getBoundingClientRect();
+  const ux0=wrapRect.left+mapEl.offsetLeft;
+  const uy0=wrapRect.top+mapEl.offsetTop;
+  const w=mapEl.offsetWidth, h=mapEl.offsetHeight;
+  const centerX=ux0+w/2, centerY=uy0+h/2;
+
+  let clientX,clientY;
+  if(typeof domEvent.clientX==="number"){ clientX=domEvent.clientX; clientY=domEvent.clientY; }
+  else if(domEvent.touches&&domEvent.touches[0]){ clientX=domEvent.touches[0].clientX; clientY=domEvent.touches[0].clientY; }
+  else if(domEvent.changedTouches&&domEvent.changedTouches[0]){ clientX=domEvent.changedTouches[0].clientX; clientY=domEvent.changedTouches[0].clientY; }
+  else return null;
+
+  const dx=clientX-centerX, dy=clientY-centerY;
+  const Rrad=mapRotationDeg*DEG;
+  const cos=Math.cos(Rrad), sin=Math.sin(Rrad);
+  // інвертуємо CSS-поворот (за годинниковою стрілкою на +R), щоб отримати
+  // координату в "неповернутій" системі, якою оперує сам Leaflet
+  const xu=dx*cos+dy*sin;
+  const yu=-dx*sin+dy*cos;
+  const containerPt=L.point(xu+w/2,yu+h/2);
+  return map.containerPointToLatLng(containerPt);
 }
 
 /* ========================================================= MAP DIRECTION ========================================================= */
@@ -882,6 +1041,7 @@ function setDirectionMode(mode){
     document.getElementById("phoneMode").classList.remove("active");
     document.getElementById("modeText").textContent="📍 Напрямок визначається між точками A (TX) та B (RX).";
   }
+  updateMapRotation();
 }
 
 /* ========================================================= A / B ========================================================= */
@@ -1911,4 +2071,4 @@ window.addEventListener("load",()=>{
 });
 </script>
 </body>
-      </html>
+                                                                                           </html>
