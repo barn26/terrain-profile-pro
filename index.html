@@ -170,7 +170,7 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
   .tick{transform-origin:50% 83px}
   .leaflet-control-zoom{margin-top:43px!important}
 }
-</style>
+  </style>
 </head>
 <body>
 
@@ -2058,3 +2058,205 @@ function renderAntennaList(){
 
   box.innerHTML=withDist.map(a=>
     '<div style="border:1px solid #17384b;border-left:3px solid '+operatorColor(a.operator)+';border-radius:7px;padding:6px;margin-bottom:4px;background:#071622;font-size:10px;line-height:1.45;">'+
+      '<b>📡 '+escapeHtml(a.operator)+'</b><br>'+
+      formatDistance(a.dist)+' · '+Math.round(a.brg)+'° '+bearingName(a.brg)+'<br>'+
+      'Тип: '+escapeHtml(a.type)+' · Висота: '+escapeHtml(a.height)+'<br>'+
+      '<button class="secondary" style="margin-top:4px;font-size:9px;padding:4px 6px" onclick="setMapPoint(\'B\','+a.lat+','+a.lon+');setDirectionMode(\'ab\');useAB();">Обрати B</button>'+
+    '</div>'
+  ).join("");
+}
+function escapeHtml(s){
+  return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
+}
+
+/* ========================================================= NETWORK ========================================================= */
+function updateNetwork(){
+  const online=navigator.onLine;
+  document.getElementById("netOnline").textContent=online?"Онлайн":"Офлайн";
+  const c=navigator.connection;
+  if(!c){
+    document.getElementById("netType").textContent="—";
+    document.getElementById("netEffective").textContent="—";
+    document.getElementById("netRtt").textContent="—";
+    return;
+  }
+  document.getElementById("netType").textContent=c.type||"—";
+  document.getElementById("netEffective").textContent=c.effectiveType||"—";
+  document.getElementById("netRtt").textContent=c.rtt!=null?c.rtt+" мс":"—";
+}
+window.addEventListener("online",updateNetwork);
+window.addEventListener("offline",updateNetwork);
+
+/* ========================================================= SAVE ========================================================= */
+function saveCurrent(){
+  if(!lastProfile){ alert("Спочатку виконайте розрахунок."); return; }
+  const saved=JSON.parse(localStorage.getItem("terrainSaved54")||"[]");
+  saved.unshift({
+    date:new Date().toLocaleString("uk-UA"),
+    lat:lastProfile.lat, lon:lastProfile.lon, bearing:lastProfile.bearing, distance:lastProfile.distance,
+    points:lastProfile.points,
+    h1:Number(document.getElementById("h1").value)||1.5,
+    h2:Number(document.getElementById("h2").value)||1.5,
+    freq:document.getElementById("freq").value,
+    antenna:selectedAntennaId
+  });
+  if(saved.length>30) saved.length=30;
+  localStorage.setItem("terrainSaved54",JSON.stringify(saved));
+  alert("Розрахунок збережено.");
+  renderSaved();
+}
+function renderSaved(){
+  const box=document.getElementById("savedList");
+  const saved=JSON.parse(localStorage.getItem("terrainSaved54")||"[]");
+  if(!saved.length){ box.textContent="Немає збережених розрахунків."; return; }
+  box.innerHTML=saved.map((s,i)=>
+    '<div style="border:1px solid #17384b;border-radius:7px;padding:7px;margin-bottom:5px;background:#071622;font-size:10px;">'+
+      '<b>'+s.date+'</b><br>'+
+      '📍 '+Number(s.lat).toFixed(5)+', '+Number(s.lon).toFixed(5)+'<br>'+
+      '🧭 '+Math.round(s.bearing)+'° '+bearingName(s.bearing)+'<br>'+
+      '📏 '+formatDistance(s.distance)+'<br>'+
+      '<button class="secondary" style="margin-top:4px" onclick="restoreSaved('+i+')">Відкрити</button> '+
+      '<button class="danger" style="margin-top:4px" onclick="deleteSaved('+i+')">Видалити</button>'+
+    '</div>'
+  ).join("");
+}
+function restoreSaved(i){
+  const saved=JSON.parse(localStorage.getItem("terrainSaved54")||"[]");
+  const s=saved[i]; if(!s) return;
+
+  currentLat=s.lat; currentLon=s.lon; currentBearing=s.bearing; bearingSource="phone";
+  document.getElementById("lat").textContent=Number(s.lat).toFixed(6);
+  document.getElementById("lon").textContent=Number(s.lon).toFixed(6);
+  if(s.h1!=null) document.getElementById("h1").value=s.h1;
+  if(s.h2!=null) document.getElementById("h2").value=s.h2;
+  if(s.freq!=null) document.getElementById("freq").value=s.freq;
+  if(s.antenna){ selectedAntennaId=s.antenna; const sel=document.getElementById("antennaSelect"); if(sel) sel.value=s.antenna; renderAntennaCard(); }
+
+  map.setView([s.lat,s.lon],15);
+  updateUserMarker(); updateCompassUI(); updateDirectionGraphic();
+
+  profileData=s.points; lastProfile=s; selectedIndex=null;
+  renderProfile(); drawProfileOnMap();
+  showTab("profileTab",document.querySelector("nav button:nth-child(2)"));
+}
+function deleteSaved(i){
+  const saved=JSON.parse(localStorage.getItem("terrainSaved54")||"[]");
+  saved.splice(i,1);
+  localStorage.setItem("terrainSaved54",JSON.stringify(saved));
+  renderSaved();
+}
+
+/* =========================================================
+   ДАЛЕКОМІР (камера + нахил телефону).
+   Це НЕ AR/лідар: телефон не вимірює глибину сцени. Це класичний
+   геодезичний прийом — клинометр: знаючи ОДНЕ з двох (висоту
+   об'єкта або дистанцію до нього) і кут нахилу телефону від
+   горизонту, рахуємо друге за формулою прямокутного трикутника:
+     tan(кут) = (висота_об'єкта − висота_ока) / дистанція
+   Нуль (горизонт) калібрується вручну самим користувачем — так
+   само, як компас: без цього кожен телефон дає свій сталий зсув
+   по осі beta, і вгадати його наперед неможливо.
+========================================================= */
+async function startRangefinderCamera(){
+  const video=document.getElementById("rangeVideo");
+  const btn=document.getElementById("rangeCamBtn");
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+    alert("Цей браузер не підтримує доступ до камери (getUserMedia).");
+    return;
+  }
+  await ensureOrientationPermission();
+  try{
+    rangeStream=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:"environment"}},audio:false});
+    video.srcObject=rangeStream;
+    if(btn) btn.textContent="🎥 Камера: УВІМК.";
+  }catch(err){
+    console.error(err);
+    alert("Не вдалося увімкнути камеру. Перевірте дозволи браузера та що сайт відкритий через HTTPS.");
+  }
+}
+function stopRangefinderCamera(){
+  if(rangeStream){
+    rangeStream.getTracks().forEach(t=>t.stop());
+    rangeStream=null;
+  }
+  const video=document.getElementById("rangeVideo");
+  if(video) video.srcObject=null;
+  const btn=document.getElementById("rangeCamBtn");
+  if(btn) btn.textContent="🎥 Увімкнути камеру";
+}
+function toggleRangeMode(){
+  const mode=document.getElementById("rangeMode").value;
+  document.getElementById("rangeObjHeight").style.display=mode==="dist"?"":"none";
+  document.getElementById("rangeKnownDist").style.display=mode==="height"?"":"none";
+}
+function currentTiltAngleDeg(){
+  if(rangeLastBeta==null||rangeBaselineBeta==null) return null;
+  return Math.abs(rangeLastBeta-rangeBaselineBeta);
+}
+function updateRangefinderAngleHud(){
+  const hud=document.getElementById("rangeAngleHud");
+  if(!hud) return;
+  if(rangeLastBeta==null){ hud.textContent="Кут: немає даних (увімкніть датчики)"; return; }
+  if(rangeBaselineBeta==null){ hud.textContent="Кут: — (спочатку відкалібруйте 0°)"; return; }
+  hud.textContent="Кут від горизонту: "+currentTiltAngleDeg().toFixed(1)+"°";
+}
+function calibrateRangefinderZero(){
+  if(rangeLastBeta==null){ alert("Немає даних нахилу. Увімкніть камеру (вона ж вмикає датчики орієнтації) і зачекайте секунду, тримаючи телефон рівно."); return; }
+  rangeBaselineBeta=rangeLastBeta;
+  updateRangefinderAngleHud();
+  document.getElementById("rangeResult").textContent="✅ 0° відкалібровано по поточному положенню телефону. Тепер наведіть камеру на верх об'єкта і натисніть «Зафіксувати».";
+}
+function captureRangefinderAngle(){
+  const angle=currentTiltAngleDeg();
+  if(angle==null){ alert("Спочатку відкалібруйте 0° (тримаючи телефон рівно, дивлячись на горизонт)."); return; }
+  if(angle<0.5){ document.getElementById("rangeResult").textContent="Кут майже 0° — підніміть телефон вище, наводячи на об'єкт, перед фіксацією."; return; }
+
+  const eyeH=Number(document.getElementById("rangeEyeHeight").value)||1.6;
+  const mode=document.getElementById("rangeMode").value;
+  const rad=angle*DEG;
+  const resultEl=document.getElementById("rangeResult");
+  const useBBtn=document.getElementById("rangeUseBBtn");
+
+  if(mode==="dist"){
+    const objH=Number(document.getElementById("rangeObjHeight").value);
+    if(!objH||objH<=eyeH){ resultEl.textContent="Вкажіть висоту об'єкта (у метрах), більшу за висоту ока."; useBBtn.style.display="none"; return; }
+    const dist=(objH-eyeH)/Math.tan(rad);
+    rangeLastResult={type:"dist",value:dist,angle,bearing:currentBearing};
+    let html="📏 Орієнтовна дистанція до об'єкта: <b>"+formatDistance(dist)+"</b><br><span class=\"note\">кут "+angle.toFixed(1)+"°, висота об'єкта "+objH+" м, очі "+eyeH+" м</span>";
+    if(currentLat==null||currentBearing==null){
+      html+="<br><span style=\"color:var(--warn)\">Немає GPS і/або азимута компаса — кнопка «Використати як точку B» недоступна, поки вони не запрацюють.</span>";
+      useBBtn.style.display="none";
+    }else{
+      useBBtn.style.display="block";
+    }
+    resultEl.innerHTML=html;
+  }else{
+    const dist=Number(document.getElementById("rangeKnownDist").value);
+    if(!dist||dist<=0){ resultEl.textContent="Вкажіть відому дистанцію до об'єкта, у метрах."; useBBtn.style.display="none"; return; }
+    const h=eyeH+dist*Math.tan(rad);
+    rangeLastResult={type:"height",value:h,angle,bearing:currentBearing};
+    resultEl.innerHTML="📏 Орієнтовна висота об'єкта: <b>"+h.toFixed(1)+" м</b><br><span class=\"note\">кут "+angle.toFixed(1)+"°, дистанція "+formatDistance(dist)+", очі "+eyeH+" м</span>";
+    useBBtn.style.display="none";
+  }
+}
+function useRangefinderAsB(){
+  if(!rangeLastResult||rangeLastResult.type!=="dist"||currentLat==null||rangeLastResult.bearing==null){
+    alert("Немає розрахованої дистанції з відомими GPS/азимутом.");
+    return;
+  }
+  const p=destination(currentLat,currentLon,rangeLastResult.bearing,rangeLastResult.value);
+  setMapPoint("B",p.lat,p.lon);
+  setDirectionMode("ab");
+  useAB();
+  showTab("mapTab",document.querySelector("nav button:nth-child(1)"));
+}
+
+/* ========================================================= LOAD ========================================================= */
+window.addEventListener("load",()=>{
+  if(sessionStorage.getItem("terrainProfileAuth54")==="1"){
+    setTimeout(()=>{ if(!map) initApp(); },100);
+  }
+});
+</script>
+</body>
+</html>
