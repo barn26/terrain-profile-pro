@@ -360,6 +360,22 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
       </div>
       <div id="mapRotateClip"><div id="map"></div></div>
     </div>
+    <div class="section" style="margin-top:6px">
+      <h3>🗺️ Перемкнути карту</h3>
+      <div class="row">
+        <select id="baseLayerSelect" onchange="switchBaseLayer(this.value)">
+          <option value="osm" selected>🗺️ Звичайна карта</option>
+          <option value="hybrid">🛰️ Гібрид (супутник)</option>
+          <option value="topo">⛰️ Рельєф кольором</option>
+          <option value="military">🎖️ Військова (топо)</option>
+          <option value="genshtab500">🪖 Генштаб СРСР 1:50 000</option>
+          <option value="genshtab1000">🪖 Генштаб СРСР 1:100 000</option>
+        </select>
+      </div>
+      <div class="row">
+        <label><input type="checkbox" id="hillshadeToggle" onchange="toggleHillshadeLayer(this.checked)"> 🌄 Тінювання рельєфу (поверх будь-якої карти)</label>
+      </div>
+    </div>
     <div class="row" style="margin-top:6px">
       <button class="secondary full" id="mapRotateBtn" onclick="toggleMapRotation()">🧭 Курс вгору (обертати карту): ВИМК.</button>
     </div>
@@ -564,6 +580,7 @@ let svgScale=null, selectedIndex=null;
 let placingPoint=null;
 let lastScan=null;
 let mapRotationEnabled=false, mapRotationDeg=0;
+let mapBaseLayers={}, hillshadeLayer=null, currentBaseLayerKey="osm";
 let calibrationOffsetDeg=0, compassInverted=false;
 let gpsCalibrating=false, gpsCalibStart=null;
 let rangeStream=null, rangeBaselineBeta=null, rangeLastBeta=null, rangeLastResult=null;
@@ -693,11 +710,12 @@ function initApp(){
   const genshtab500=L.tileLayer("https://tiles.nakarte.me/ggc500/{z}/{x}/{y}",{tms:true,minZoom:2,maxZoom:17,maxNativeZoom:15,attribution:"Держгеокадастр/Генштаб СРСР (1:50 000), тайли: tiles.nakarte.me — сторонній сервіс без гарантій доступності"});
   const genshtab1000=L.tileLayer("https://tiles.nakarte.me/ggc1000/{z}/{x}/{y}",{tms:true,minZoom:2,maxZoom:16,maxNativeZoom:14,attribution:"Генштаб СРСР (1:100 000), тайли: tiles.nakarte.me — сторонній сервіс без гарантій доступності"});
 
-  L.control.layers(
-    {"🗺️ Звичайна карта":osm,"🛰️ Гібрид":hybrid,"⛰️ Рельєф кольором":topo,"🎖️ Військова (топо)":military,"🪖 Генштаб СРСР 1:50 000":genshtab500,"🪖 Генштаб СРСР 1:100 000":genshtab1000},
-    {"🌄 Тінювання рельєфу":hillshade},
-    {collapsed:true,position:"bottomright"}
-  ).addTo(map);
+  // Власний, завжди видимий перемикач карт (звичайний <select> під картою) —
+  // замінює вбудований Leaflet-контрол шарів, іконку якого важко знайти й
+  // легко перекрити іншими елементами на невеликому екрані.
+  mapBaseLayers={osm,hybrid,topo,military,genshtab500,genshtab1000};
+  hillshadeLayer=hillshade;
+  currentBaseLayerKey="osm";
 
   antennaLayer.addTo(map);
   profileMarkersLayer=L.layerGroup().addTo(map);
@@ -1021,6 +1039,20 @@ function bearingName(b){
    системі координат, для точок A/B рахуємо поправку вручну —
    див. correctedLatLngFromEvent().
 ========================================================= */
+function switchBaseLayer(key){
+  if(!map||!mapBaseLayers[key]) return;
+  Object.entries(mapBaseLayers).forEach(([k,layer])=>{
+    if(k!==key && map.hasLayer(layer)) map.removeLayer(layer);
+  });
+  if(!map.hasLayer(mapBaseLayers[key])) mapBaseLayers[key].addTo(map);
+  currentBaseLayerKey=key;
+}
+function toggleHillshadeLayer(checked){
+  if(!map||!hillshadeLayer) return;
+  if(checked){ if(!map.hasLayer(hillshadeLayer)) hillshadeLayer.addTo(map); }
+  else{ if(map.hasLayer(hillshadeLayer)) map.removeLayer(hillshadeLayer); }
+}
+
 function toggleMapRotation(){
   mapRotationEnabled=!mapRotationEnabled;
   const btn=document.getElementById("mapRotateBtn");
