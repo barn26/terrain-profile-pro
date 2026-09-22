@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#06111d">
+<meta name="referrer" content="no-referrer">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>ПРОФІЛЬ РЕЛЬЄФУ PRO</title>
 <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" crossorigin="">
@@ -375,6 +376,7 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
       <div class="row">
         <label><input type="checkbox" id="hillshadeToggle" onchange="toggleHillshadeLayer(this.checked)"> 🌄 Тінювання рельєфу (поверх будь-якої карти)</label>
       </div>
+      <div class="note" id="genshtabStatus" style="margin-top:4px"></div>
     </div>
     <div class="row" style="margin-top:6px">
       <button class="secondary full" id="mapRotateBtn" onclick="toggleMapRotation()">🧭 Курс вгору (обертати карту): ВИМК.</button>
@@ -709,6 +711,15 @@ function initApp(){
   const military=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, HERE, Garmin, FAO, NOAA, USGS"});
   const genshtab500=L.tileLayer("https://tiles.nakarte.me/ggc500/{z}/{x}/{y}",{tms:true,minZoom:2,maxZoom:17,maxNativeZoom:15,attribution:"Держгеокадастр/Генштаб СРСР (1:50 000), тайли: tiles.nakarte.me — сторонній сервіс без гарантій доступності"});
   const genshtab1000=L.tileLayer("https://tiles.nakarte.me/ggc1000/{z}/{x}/{y}",{tms:true,minZoom:2,maxZoom:16,maxNativeZoom:14,attribution:"Генштаб СРСР (1:100 000), тайли: tiles.nakarte.me — сторонній сервіс без гарантій доступності"});
+
+  // Сторонній сервіс: частина тайлів може не завантажуватись (rate-limit,
+  // referrer-блокування, білі плями покриття). Рахуємо помилки, щоб
+  // показати чесний статус користувачу замість мовчазних порожніх клітинок.
+  [genshtab500,genshtab1000].forEach(layer=>{
+    layer._okCount=0; layer._errCount=0;
+    layer.on("tileload",()=>{ layer._okCount++; updateGenshtabStatus(); });
+    layer.on("tileerror",()=>{ layer._errCount++; updateGenshtabStatus(); });
+  });
 
   // Власний, завжди видимий перемикач карт (звичайний <select> під картою) —
   // замінює вбудований Leaflet-контрол шарів, іконку якого важко знайти й
@@ -1046,6 +1057,20 @@ function switchBaseLayer(key){
   });
   if(!map.hasLayer(mapBaseLayers[key])) mapBaseLayers[key].addTo(map);
   currentBaseLayerKey=key;
+  updateGenshtabStatus();
+}
+function updateGenshtabStatus(){
+  const el=document.getElementById("genshtabStatus");
+  if(!el) return;
+  const layer=mapBaseLayers[currentBaseLayerKey];
+  if(!layer||(currentBaseLayerKey!=="genshtab500"&&currentBaseLayerKey!=="genshtab1000")){
+    el.textContent="";
+    return;
+  }
+  const ok=layer._okCount||0, err=layer._errCount||0;
+  if(ok+err===0){ el.textContent="Завантаження тайлів Генштабу…"; return; }
+  const pct=Math.round(100*ok/(ok+err));
+  el.textContent="Тайли Генштабу: завантажено "+ok+", не вдалось "+err+" ("+pct+"% успішно). Сторонній сервер без гарантій — якщо відсоток низький, спробуйте інший масштаб Генштабу або переключіться на «Військова (топо)»/«Рельєф кольором».";
 }
 function toggleHillshadeLayer(checked){
   if(!map||!hillshadeLayer) return;
