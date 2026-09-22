@@ -95,7 +95,7 @@ button.neon-click:after{content:"";position:absolute;top:-60%;left:-35%;width:25
 .leaflet-control-zoom{border:none!important;box-shadow:none!important;margin-top:48px!important;margin-left:6px!important}
 .leaflet-control-zoom a{width:29px!important;height:29px!important;line-height:27px!important;font-size:17px!important;
   background:rgba(5,16,26,.9)!important;color:#dcefff!important;border:1px solid #24546b!important}
-.leaflet-top.leaflet-right{margin-top:48px!important;margin-right:6px!important}
+.leaflet-bottom.leaflet-right{margin-bottom:6px!important;margin-right:6px!important}
 .leaflet-control-layers{background:rgba(5,16,26,.94)!important;color:#fff;border:1px solid #24546b!important;
   border-radius:7px!important;box-shadow:0 5px 15px rgba(0,0,0,.3)!important}
 .leaflet-control-layers-toggle{width:31px!important;height:31px!important;background-size:18px 18px!important}
@@ -543,7 +543,7 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
 </div>
 
 <script>
-  /* ========================================================= GLOBAL ========================================================= */
+/* ========================================================= GLOBAL ========================================================= */
 const PASSWORD="2601";
 let map;
 let userMarker=null, accuracyCircle=null;
@@ -696,7 +696,7 @@ function initApp(){
   L.control.layers(
     {"🗺️ Звичайна карта":osm,"🛰️ Гібрид":hybrid,"⛰️ Рельєф кольором":topo,"🎖️ Військова (топо)":military,"🪖 Генштаб СРСР 1:50 000":genshtab500,"🪖 Генштаб СРСР 1:100 000":genshtab1000},
     {"🌄 Тінювання рельєфу":hillshade},
-    {collapsed:true,position:"topright"}
+    {collapsed:true,position:"bottomright"}
   ).addTo(map);
 
   antennaLayer.addTo(map);
