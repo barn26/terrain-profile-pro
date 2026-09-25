@@ -316,13 +316,39 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
   </div>
 
   <div class="section">
-    <h3>📡 Мобільні антени (карта, OSM)</h3>
-    <div class="row"><button class="secondary full" onclick="toggleAntennas()" id="antennaBtn">📡 Антени: УВІМК.</button></div>
-    <button class="secondary full" onclick="loadAntennas()">↻ Оновити</button>
+    <h3>📡 Мобільні вишки (OSM)</h3>
+    <div class="row"><button class="secondary full" onclick="toggleAntennas()" id="antennaBtn">📡 Пошук по карті: УВІМК.</button></div>
+    <button class="secondary full" onclick="loadAntennas()">↻ Оновити (поточна область карти)</button>
+    <div class="row" style="margin-top:5px">
+      <select id="towerRadius">
+        <option value="2000">2 км від GPS</option>
+        <option value="5000" selected>5 км від GPS</option>
+        <option value="10000">10 км від GPS</option>
+        <option value="20000">20 км від GPS</option>
+      </select>
+    </div>
+    <button class="primary full" onclick="searchTowersAroundGPS()">📍 Шукати вишки біля мого GPS</button>
+    <div class="row" style="margin-top:5px">
+      <select id="towerOperatorFilter" onchange="renderAntennaList()">
+        <option value="all" selected>Усі оператори</option>
+        <option value="kyivstar">Тільки Київстар</option>
+        <option value="vodafone">Тільки Vodafone</option>
+        <option value="lifecell">Тільки lifecell</option>
+        <option value="unknown">Оператор не вказаний</option>
+      </select>
+    </div>
     <div class="note" id="antennaStatus" style="margin-top:5px">Завантаження...</div>
     <div class="scroll" id="antennaListBox" style="max-height:230px;margin-top:6px">
       <div class="note">Немає даних.</div>
     </div>
+  </div>
+
+  <div class="section">
+    <h3>🏗️ Інфраструктура (ЛЕП, вежі, вода)</h3>
+    <p class="note">Лінії електропередач, опори, підстанції, водонапірні вежі, димарі, силоси з живих даних OpenStreetMap — часто саме на них монтують антени. Показується для поточної області карти.</p>
+    <div class="row"><button class="secondary full" onclick="toggleInfra()" id="infraBtn">🏗️ Інфраструктура: ВИМК.</button></div>
+    <button class="secondary full" onclick="loadInfra()">↻ Оновити (поточна область карти)</button>
+    <div class="note" id="infraStatus" style="margin-top:5px">Вимкнено.</div>
   </div>
 
   <div class="section">
@@ -369,14 +395,11 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
           <option value="hybrid">🛰️ Гібрид (супутник)</option>
           <option value="topo">⛰️ Рельєф кольором</option>
           <option value="military">🎖️ Військова (топо)</option>
-          <option value="genshtab500">🪖 Генштаб СРСР 1:50 000</option>
-          <option value="genshtab1000">🪖 Генштаб СРСР 1:100 000</option>
         </select>
       </div>
       <div class="row">
         <label><input type="checkbox" id="hillshadeToggle" onchange="toggleHillshadeLayer(this.checked)"> 🌄 Тінювання рельєфу (поверх будь-якої карти)</label>
       </div>
-      <div class="note" id="genshtabStatus" style="margin-top:4px"></div>
     </div>
     <div class="row" style="margin-top:6px">
       <button class="secondary full" id="mapRotateBtn" onclick="toggleMapRotation()">🧭 Курс вгору (обертати карту): ВИМК.</button>
@@ -386,7 +409,7 @@ footer{text-align:center;color:#688497;font-size:9px;padding:10px 5px 4px;line-h
         <b>🧭 Напрямок:</b> синій промінь показує напрямок телефона.<br>
         <b>⛰️ Рельєф:</b> топографічний шар показує висотні області кольором.<br>
         <b>🎖️ Військова (топо):</b> Esri World Topo Map — контурні лінії й рельєф у стилі топографічних карт.<br>
-        <b>🪖 Генштаб СРСР:</b> класичні топокарти (1:50 000/1:100 000) з лісом, ЛЕП, ґрунтовими дорогами й точними висотними відмітками — дані 50-70-річної давності, сторонній тайл-сервіс без гарантій доступності.<br>
+        <b>🏗️ Інфраструктура:</b> окремий перемикач нижче на карті — ЛЕП, опори, підстанції, водонапірні вежі з живих даних OpenStreetMap.<br>
         <b>🌄 Тінювання рельєфу:</b> додатковий напівпрозорий шар — світло/тінь від "сонця", щоб об'ємно бачити пагорби та яри навіть на плоскій карті (вмикається окремо, галочкою в списку шарів праворуч вгорі).<br>
         <b>🛰️ Гібрид:</b> супутникове зображення + дороги + назви.<br>
         <b>🧭 Курс вгору:</b> карта обертається так, щоб "вгору" завжди був напрямок, куди дивиться телефон (як у навігаторі). Поки увімкнено, ручне перетягування карти вимкнено — вона сама центрується по GPS; вимкніть режим, щоб знову вільно пересувати карту й ставити точки A/B.
@@ -576,6 +599,8 @@ let compassStarted=false;
 let rawHeading=null, stableHeading=null, headingInitialized=false;
 let antennaLayer=L.layerGroup();
 let antennaData=[], antennasEnabled=true, antennaTimer=null;
+let infraLayer=L.layerGroup();
+let infraEnabled=false, infraTimer=null;
 let profileData=[], lastProfile=null, lastRadio=null;
 let profileMarkersLayer=null, selectionMarker=null;
 let svgScale=null, selectedIndex=null;
@@ -709,22 +734,11 @@ function initApp(){
   const topo=L.tileLayer("https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png",{maxZoom:17,attribution:"© OpenTopoMap © OpenStreetMap contributors"});
   const hillshade=L.tileLayer("https://tiles.wmflabs.org/hillshading/{z}/{x}/{y}.png",{maxZoom:17,opacity:.42,attribution:"© OpenStreetMap contributors"});
   const military=L.tileLayer("https://server.arcgisonline.com/ArcGIS/rest/services/World_Topo_Map/MapServer/tile/{z}/{y}/{x}",{maxZoom:19,attribution:"Esri, HERE, Garmin, FAO, NOAA, USGS"});
-  const genshtab500=L.tileLayer("https://tiles.nakarte.me/ggc500/{z}/{x}/{y}",{tms:true,minZoom:2,maxZoom:17,maxNativeZoom:15,attribution:"Держгеокадастр/Генштаб СРСР (1:50 000), тайли: tiles.nakarte.me — сторонній сервіс без гарантій доступності"});
-  const genshtab1000=L.tileLayer("https://tiles.nakarte.me/ggc1000/{z}/{x}/{y}",{tms:true,minZoom:2,maxZoom:16,maxNativeZoom:14,attribution:"Генштаб СРСР (1:100 000), тайли: tiles.nakarte.me — сторонній сервіс без гарантій доступності"});
-
-  // Сторонній сервіс: частина тайлів може не завантажуватись (rate-limit,
-  // referrer-блокування, білі плями покриття). Рахуємо помилки, щоб
-  // показати чесний статус користувачу замість мовчазних порожніх клітинок.
-  [genshtab500,genshtab1000].forEach(layer=>{
-    layer._okCount=0; layer._errCount=0;
-    layer.on("tileload",()=>{ layer._okCount++; updateGenshtabStatus(); });
-    layer.on("tileerror",()=>{ layer._errCount++; updateGenshtabStatus(); });
-  });
 
   // Власний, завжди видимий перемикач карт (звичайний <select> під картою) —
   // замінює вбудований Leaflet-контрол шарів, іконку якого важко знайти й
   // легко перекрити іншими елементами на невеликому екрані.
-  mapBaseLayers={osm,hybrid,topo,military,genshtab500,genshtab1000};
+  mapBaseLayers={osm,hybrid,topo,military};
   hillshadeLayer=hillshade;
   currentBaseLayerKey="osm";
 
@@ -743,9 +757,14 @@ function initApp(){
   });
 
   map.on("moveend",()=>{
-    if(!antennasEnabled) return;
-    clearTimeout(antennaTimer);
-    antennaTimer=setTimeout(loadAntennas,700);
+    if(antennasEnabled){
+      clearTimeout(antennaTimer);
+      antennaTimer=setTimeout(loadAntennas,700);
+    }
+    if(infraEnabled){
+      clearTimeout(infraTimer);
+      infraTimer=setTimeout(loadInfra,700);
+    }
   });
 
   updateNetwork();
@@ -1057,20 +1076,6 @@ function switchBaseLayer(key){
   });
   if(!map.hasLayer(mapBaseLayers[key])) mapBaseLayers[key].addTo(map);
   currentBaseLayerKey=key;
-  updateGenshtabStatus();
-}
-function updateGenshtabStatus(){
-  const el=document.getElementById("genshtabStatus");
-  if(!el) return;
-  const layer=mapBaseLayers[currentBaseLayerKey];
-  if(!layer||(currentBaseLayerKey!=="genshtab500"&&currentBaseLayerKey!=="genshtab1000")){
-    el.textContent="";
-    return;
-  }
-  const ok=layer._okCount||0, err=layer._errCount||0;
-  if(ok+err===0){ el.textContent="Завантаження тайлів Генштабу…"; return; }
-  const pct=Math.round(100*ok/(ok+err));
-  el.textContent="Тайли Генштабу: завантажено "+ok+", не вдалось "+err+" ("+pct+"% успішно). Сторонній сервер без гарантій — якщо відсоток низький, спробуйте інший масштаб Генштабу або переключіться на «Військова (топо)»/«Рельєф кольором».";
 }
 function toggleHillshadeLayer(checked){
   if(!map||!hillshadeLayer) return;
@@ -2016,55 +2021,83 @@ function operatorColor(op){
   if(s.includes("lifecell")||s.includes("лайфселл")||s.includes("life:)")) return "#ffd400";
   return "#65ffb3";
 }
+const OVERPASS_ENDPOINTS=[
+  "https://overpass-api.de/api/interpreter",
+  "https://overpass.kumi.systems/api/interpreter",
+  "https://overpass.openstreetmap.ru/api/interpreter"
+];
+async function fetchOverpass(query){
+  for(const endpoint of OVERPASS_ENDPOINTS){
+    try{
+      const r=await fetch(endpoint+"?data="+encodeURIComponent(query));
+      if(!r.ok) continue;
+      const data=await r.json();
+      if(data&&Array.isArray(data.elements)) return data;
+    }catch(e){ console.warn("Overpass:",e); }
+  }
+  return null;
+}
+function towerFilterClauses(area){
+  // area — або bbox "(s,w,n,e)", або радіус "(around:R,lat,lon)"
+  return [
+    'node["communication:mobile_phone"="yes"]'+area,
+    'way["communication:mobile_phone"="yes"]'+area,
+    'relation["communication:mobile_phone"="yes"]'+area,
+    'node["antenna:type"="mobile_phone"]'+area,
+    'way["antenna:type"="mobile_phone"]'+area,
+    'node["man_made"="antenna"]'+area,
+    'node["telecom"="antenna"]'+area,
+    'way["telecom"="antenna"]'+area,
+    'node["tower:type"="communication"]'+area,
+    'way["tower:type"="communication"]'+area,
+    'node["man_made"="communications_tower"]'+area,
+    'way["man_made"="communications_tower"]'+area,
+    'node["man_made"="mast"]'+area,
+    'way["man_made"="mast"]'+area
+  ].join(";")+";";
+}
 async function toggleAntennas(){
   antennasEnabled=!antennasEnabled;
   const btn=document.getElementById("antennaBtn");
-  if(antennasEnabled){ btn.textContent="📡 Антени: УВІМК."; antennaLayer.addTo(map); loadAntennas(); }
-  else{ btn.textContent="📡 Антени: ВИМК."; antennaLayer.clearLayers(); }
+  if(antennasEnabled){ btn.textContent="📡 Пошук по карті: УВІМК."; antennaLayer.addTo(map); loadAntennas(); }
+  else{ btn.textContent="📡 Пошук по карті: ВИМК."; antennaLayer.clearLayers(); }
 }
 async function loadAntennas(){
   if(!map||!antennasEnabled) return;
   const status=document.getElementById("antennaStatus");
-  status.textContent="Оновлення...";
-  const b=map.getBounds();
-  const south=b.getSouth(),west=b.getWest(),north=b.getNorth(),east=b.getEast();
+  status.textContent="Оновлення (за областю карти)...";
 
   if(map.getZoom()<11){
-    status.textContent="Збільште карту для антен.";
+    status.textContent="Збільште карту для пошуку вишок, або скористайтесь «Шукати біля мого GPS» нижче.";
     document.getElementById("antennaCount").textContent="0";
     antennaLayer.clearLayers(); antennaData=[]; renderAntennaList();
     return;
   }
 
-  const bbox=south+","+west+","+north+","+east;
-  const query="[out:json][timeout:18];("+
-    'node["communication:mobile_phone"="yes"]('+bbox+');'+
-    'way["communication:mobile_phone"="yes"]('+bbox+');'+
-    'relation["communication:mobile_phone"="yes"]('+bbox+');'+
-    'node["antenna:type"="mobile_phone"]('+bbox+');'+
-    'way["antenna:type"="mobile_phone"]('+bbox+');'+
-    'node["telecom"="antenna"]('+bbox+');'+
-    'way["telecom"="antenna"]('+bbox+');'+
-    'node["tower:type"="communication"]('+bbox+');'+
-    'way["tower:type"="communication"]('+bbox+');'+
-    'node["man_made"="communications_tower"]('+bbox+');'+
-    'way["man_made"="communications_tower"]('+bbox+');'+
-    'node["man_made"="mast"]('+bbox+');'+
-    'way["man_made"="mast"]('+bbox+');'+
-    ");out center tags;";
+  const b=map.getBounds();
+  const bbox="("+b.getSouth()+","+b.getWest()+","+b.getNorth()+","+b.getEast()+")";
+  const query="[out:json][timeout:20];("+towerFilterClauses(bbox)+");out center tags;";
+  const data=await fetchOverpass(query);
+  if(!data){ status.textContent="Не вдалося оновити (усі дзеркала Overpass не відповіли)."; return; }
+  renderTowerResults(data,"за областю карти");
+}
+async function searchTowersAroundGPS(){
+  if(currentLat==null){ alert("Спочатку визначте своє GPS-положення (кнопка «📍 Моє місце»)."); return; }
+  antennasEnabled=true;
+  document.getElementById("antennaBtn").textContent="📡 Пошук по карті: УВІМК.";
+  antennaLayer.addTo(map);
 
-  const endpoints=["https://overpass-api.de/api/interpreter","https://overpass.kumi.systems/api/interpreter"];
-  let data=null;
-  for(const endpoint of endpoints){
-    try{
-      const r=await fetch(endpoint+"?data="+encodeURIComponent(query));
-      if(!r.ok) continue;
-      data=await r.json();
-      if(data&&Array.isArray(data.elements)) break;
-    }catch(e){ console.warn("Overpass:",e); }
-  }
-  if(!data){ status.textContent="Не вдалося оновити."; return; }
+  const radius=Number(document.getElementById("towerRadius").value)||5000;
+  const status=document.getElementById("antennaStatus");
+  status.textContent="Пошук у радіусі "+formatDistance(radius)+" від GPS...";
 
+  const area="(around:"+radius+","+currentLat+","+currentLon+")";
+  const query="[out:json][timeout:25];("+towerFilterClauses(area)+");out center tags;";
+  const data=await fetchOverpass(query);
+  if(!data){ status.textContent="Не вдалося отримати дані (усі дзеркала Overpass не відповіли)."; return; }
+  renderTowerResults(data,"у радіусі "+formatDistance(radius)+" від GPS");
+}
+function renderTowerResults(data,sourceLabel){
   antennaLayer.clearLayers(); antennaData=[];
   const seen=new Set(); let count=0;
 
@@ -2079,7 +2112,8 @@ async function loadAntennas(){
     const tags=el.tags||{};
     const operator=tags.operator||tags["operator:name"]||"Оператор не вказаний";
     const height=tags.height||tags["tower:height"]||"—";
-    const tech=[tags["communication:mobile_phone"],tags["communication:mobile_phone:operator"],tags["mobile_phone"],tags.telecom].filter(Boolean).join(", ");
+    const bands=tags["communication:mobile_phone:bands"]||tags["communication:mobile_phone"]||"";
+    const tech=[bands,tags["communication:mobile_phone:operator"],tags.telecom].filter(Boolean).join(", ");
     const type=tags["tower:type"]||tags.man_made||tags["antenna:type"]||"антена/щогла";
 
     antennaData.push({lat,lon,operator,height,type,tech});
@@ -2100,28 +2134,145 @@ async function loadAntennas(){
   }
 
   document.getElementById("antennaCount").textContent=count;
-  status.textContent="Знайдено: "+count+". Дані залежать від OpenStreetMap.";
+  document.getElementById("antennaStatus").textContent="Знайдено "+sourceLabel+": "+count+". Дані залежать від OpenStreetMap.";
   renderAntennaList();
 }
 function renderAntennaList(){
   const box=document.getElementById("antennaListBox");
   if(!box) return;
-  if(!antennaData.length){ box.innerHTML='<div class="note">Антени не знайдено.</div>'; return; }
+  if(!antennaData.length){ box.innerHTML='<div class="note">Вишки не знайдено.</div>'; return; }
+
+  const filterEl=document.getElementById("towerOperatorFilter");
+  const filter=filterEl?filterEl.value:"all";
+  let filtered=antennaData;
+  if(filter==="kyivstar") filtered=antennaData.filter(a=>/kyivstar|київстар/i.test(a.operator));
+  else if(filter==="vodafone") filtered=antennaData.filter(a=>/vodafone|водафон/i.test(a.operator));
+  else if(filter==="lifecell") filtered=antennaData.filter(a=>/lifecell|лайфселл|life:\)/i.test(a.operator));
+  else if(filter==="unknown") filtered=antennaData.filter(a=>a.operator==="Оператор не вказаний");
+
+  if(!filtered.length){ box.innerHTML='<div class="note">За цим фільтром нічого не знайдено ('+antennaData.length+' всього).</div>'; return; }
+
   const refLat=currentLat!=null?currentLat:map.getCenter().lat;
   const refLon=currentLon!=null?currentLon:map.getCenter().lng;
-  const withDist=antennaData.map(a=>({...a,
+  const withDist=filtered.map(a=>({...a,
       dist:getDistance(refLat,refLon,a.lat,a.lon),
       brg:getBearing(refLat,refLon,a.lat,a.lon)
-    })).sort((a,b)=>a.dist-b.dist).slice(0,15);
+    })).sort((a,b)=>a.dist-b.dist).slice(0,30);
 
   box.innerHTML=withDist.map(a=>
     '<div style="border:1px solid #17384b;border-left:3px solid '+operatorColor(a.operator)+';border-radius:7px;padding:6px;margin-bottom:4px;background:#071622;font-size:10px;line-height:1.45;">'+
       '<b>📡 '+escapeHtml(a.operator)+'</b><br>'+
       formatDistance(a.dist)+' · '+Math.round(a.brg)+'° '+bearingName(a.brg)+'<br>'+
-      'Тип: '+escapeHtml(a.type)+' · Висота: '+escapeHtml(a.height)+'<br>'+
+      'Тип: '+escapeHtml(a.type)+' · Висота: '+escapeHtml(a.height)+
+      (a.tech?('<br>Дані: '+escapeHtml(a.tech)):'')+'<br>'+
       '<button class="secondary" style="margin-top:4px;font-size:9px;padding:4px 6px" onclick="setMapPoint(\'B\','+a.lat+','+a.lon+');setDirectionMode(\'ab\');useAB();">Обрати B</button>'+
     '</div>'
-  ).join("");
+  ).join("")+
+  (filtered.length>30?'<div class="note" style="margin-top:4px">Показано 30 найближчих з '+filtered.length+'.</div>':'');
+}
+
+/* =========================================================
+   ІНФРАСТРУКТУРА (ЛЕП, опори, підстанції, водонапірні вежі) —
+   живі дані OpenStreetMap. Заміна ненадійної растрової карти
+   Генштабу: те саме практичне значення (де шукати опору для
+   монтажу антени), але стабільне джерело без гарантій-застережень.
+========================================================= */
+function infraColor(kind){
+  if(kind==="line") return "#ffb347";
+  if(kind==="minor_line") return "#ffd97a";
+  if(kind==="tower") return "#ff8c42";
+  if(kind==="substation") return "#ff6b7a";
+  if(kind==="water_tower") return "#5ecbff";
+  return "#b3a2ff"; // chimney/silo
+}
+function infraLabel(kind){
+  const map={line:"ЛЕП (магістральна)",minor_line:"ЛЕП (місцева)",tower:"Опора ЛЕП",substation:"Підстанція",water_tower:"Водонапірна вежа",chimney:"Димар",silo:"Силос"};
+  return map[kind]||kind;
+}
+async function toggleInfra(){
+  infraEnabled=!infraEnabled;
+  const btn=document.getElementById("infraBtn");
+  if(infraEnabled){ btn.textContent="🏗️ Інфраструктура: УВІМК."; infraLayer.addTo(map); loadInfra(); }
+  else{ btn.textContent="🏗️ Інфраструктура: ВИМК."; infraLayer.clearLayers(); document.getElementById("infraStatus").textContent="Вимкнено."; }
+}
+async function loadInfra(){
+  if(!map||!infraEnabled) return;
+  const status=document.getElementById("infraStatus");
+  status.textContent="Оновлення...";
+
+  if(map.getZoom()<12){
+    status.textContent="Збільште карту для пошуку інфраструктури (потрібен масштаб ближче).";
+    infraLayer.clearLayers();
+    return;
+  }
+
+  const b=map.getBounds();
+  const bbox="("+b.getSouth()+","+b.getWest()+","+b.getNorth()+","+b.getEast()+")";
+  const query="[out:json][timeout:22];("+
+    'way["power"="line"]'+bbox+';'+
+    'way["power"="minor_line"]'+bbox+';'+
+    'node["power"="tower"]'+bbox+';'+
+    'node["power"="substation"]'+bbox+';'+
+    'way["power"="substation"]'+bbox+';'+
+    'node["man_made"="water_tower"]'+bbox+';'+
+    'node["man_made"="chimney"]'+bbox+';'+
+    'node["man_made"="silo"]'+bbox+';'+
+    ");out geom;";
+
+  const data=await fetchOverpass(query);
+  if(!data){ status.textContent="Не вдалося оновити (усі дзеркала Overpass не відповіли)."; return; }
+
+  infraLayer.clearLayers();
+  let lineCount=0, pointCount=0;
+
+  for(const el of data.elements){
+    const tags=el.tags||{};
+    let kind=tags.power||tags.man_made;
+    if(kind==="substation" && el.type!=="way" && el.type!=="node") continue;
+
+    if(el.type==="way" && (kind==="line"||kind==="minor_line") && Array.isArray(el.geometry)){
+      const latlngs=el.geometry.map(g=>[g.lat,g.lon]);
+      if(latlngs.length<2) continue;
+      const color=infraColor(kind);
+      const line=L.polyline(latlngs,{color,weight:kind==="line"?2.5:1.6,opacity:.8,dashArray:kind==="minor_line"?"4 4":null});
+      const voltage=tags.voltage?(Number(tags.voltage)>=1000?(Math.round(Number(tags.voltage)/1000)+" кВ"):(tags.voltage+" В")):"невідома";
+      line.bindPopup('<b>⚡ '+infraLabel(kind)+'</b><br>Напруга: '+escapeHtml(voltage)+(tags.operator?('<br>Оператор: '+escapeHtml(tags.operator)):''));
+      infraLayer.addLayer(line);
+      lineCount++;
+      continue;
+    }
+
+    if(el.type==="way" && kind==="substation" && Array.isArray(el.geometry) && el.geometry.length){
+      const latlngs=el.geometry.map(g=>[g.lat,g.lon]);
+      const c=latlngs[Math.floor(latlngs.length/2)];
+      addInfraPoint(c[0],c[1],kind,tags);
+      pointCount++;
+      continue;
+    }
+
+    if(el.type==="node" && el.lat!=null && el.lon!=null && kind){
+      addInfraPoint(el.lat,el.lon,kind,tags);
+      pointCount++;
+    }
+  }
+
+  status.textContent="Знайдено: "+lineCount+" ліній, "+pointCount+" об'єктів. Дані залежать від OpenStreetMap.";
+}
+function addInfraPoint(lat,lon,kind,tags){
+  const color=infraColor(kind);
+  const shape=kind==="tower"?"width:8px;height:8px;transform:rotate(45deg);":"width:10px;height:10px;border-radius:50%;";
+  const icon=L.divIcon({className:"",html:'<div style="'+shape+'background:'+color+';border:2px solid #06131f;box-shadow:0 0 6px '+color+'AA;"></div>',iconSize:[12,12],iconAnchor:[6,6]});
+  const marker=L.marker([lat,lon],{icon});
+  const height=tags.height||tags["tower:height"]||null;
+  marker.bindPopup(
+    '<b>🏗️ '+infraLabel(kind)+'</b>'+
+    (height?('<br>Висота: '+escapeHtml(height)):'')+
+    (tags.voltage?('<br>Напруга: '+escapeHtml(tags.voltage)+' В'):'')+
+    (tags.operator?('<br>Оператор: '+escapeHtml(tags.operator)):'')+
+    '<br>'+lat.toFixed(6)+', '+lon.toFixed(6)+
+    '<button class="secondary" style="margin-top:5px;font-size:10px;padding:5px 7px;display:block" onclick="setMapPoint(\'B\','+lat+','+lon+');setDirectionMode(\'ab\');useAB();">Обрати B (RX)</button>'
+  );
+  infraLayer.addLayer(marker);
 }
 function escapeHtml(s){
   return String(s).replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;").replaceAll('"',"&quot;");
