@@ -6,8 +6,9 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorag
 var gpsBlocked=ls("terrainGpsBlocked")!=="0";          /* за замовчуванням GPS ЗАБЛОКОВАНО */
 var posSrc=null, phoneB=null, ring=null, installEv=null, tt=null;
 var manualAz=parseFloat(ls("terrainManualAz")); if(!isFinite(manualAz)) manualAz=null;
-var VERSION="1.4.1", VDATE="25.10.2026";
+var VERSION="1.4.2", VDATE="25.10.2026";
 var HISTORY=[
+ ["1.4.2","25.10.2026","Кнопка «📲 Встановити» (вгорі й у вкладці «Мережа»): викликає установку або показує інструкцію та перевірку маніфесту."],
  ["1.4.1","25.10.2026","Встановлення як додаток: маніфест перейменовано в manifest.json (надійніше для GitHub Pages), оновлено кеш."],
  ["1.4.0","25.10.2026","Вкладка «🚁 Дрон» перероблена: сектор на карті → порада по антені (азимут, нахил, висота) і по польоту (стійка дальність, ділянки втрати зв'язку з маркерами ⚠ та мінімальною висотою дрона)."],
  ["1.3.0","25.10.2026","Вкладка «🛩️ Дрон»: задаєте сектор — програма радить азимут, нахил і висоту антени, мінімальну висоту польоту дрона по дальностях, кількість антен."],
@@ -40,6 +41,23 @@ st.textContent=".mode{grid-template-columns:1fr 1fr 1fr!important}button:disable
 document.head.appendChild(st);
 
 /* ---------- утиліти ---------- */
+function helpBox(html){
+  var b=$("ngHelp");
+  if(!b){ b=document.createElement("div"); b.id="ngHelp"; b.style.cssText="position:fixed;inset:0;z-index:9500;background:rgba(3,10,17,.92);align-items:center;justify-content:center;padding:15px"; document.body.appendChild(b); }
+  b.innerHTML='<div style="max-width:380px;max-height:90vh;overflow:auto;background:#0b1a29;border:1px solid #1d5069;border-radius:13px;padding:16px;font-size:13px;line-height:1.5;color:#e8f4ff">'+html+'<button class="primary full" style="margin-top:10px" id="ngHelpX">Закрити</button></div>';
+  b.style.display="flex"; $("ngHelpX").onclick=function(){ b.style.display="none"; };
+}
+async function installFlow(){
+  if(installEv){ var ev=installEv; installEv=null; ev.prompt(); return; }
+  if((window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone){ toast("Це вже встановлений додаток."); return; }
+  var ios=/iphone|ipad|ipod/i.test(navigator.userAgent), chk=[];
+  try{ var r=await fetch("manifest.json",{cache:"no-store"}); chk.push("маніфест: "+(r.ok?"✅":"❌ помилка "+r.status)); }catch(e){ chk.push("маніфест: ❌ недоступний"); }
+  try{ var g=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); chk.push("службовий скрипт: "+(g?"✅":"❌ не зареєстровано")); }catch(e){ chk.push("службовий скрипт: ❌"); }
+  helpBox('<b>📲 Встановлення додатка</b><br><br>'+
+    (ios?'iPhone/iPad: відкрийте сайт у <b>Safari</b> → «Поділитись» (квадрат зі стрілкою) → <b>«На початковий екран»</b>.'
+        :'Android: у <b>Chrome</b> натисніть меню <b>⋮</b> → <b>«Встановити застосунок»</b> (або «Додати на головний екран»).<br>Не працює у Telegram, Viber, Firefox — відкрийте посилання в Chrome.')+
+    '<br><br><span style="color:#8faabd">Перевірка: '+chk.join(" · ")+'<br>Chrome ще не запропонував установку сам. Зазвичай допомагає: оновити сторінку, закрити вкладку й відкрити знову (потрібен інтернет).</span>');
+}
 function toast(t){ var e=$("ngToast"); if(!e){ e=document.createElement("div"); e.id="ngToast"; e.className="toast"; document.body.appendChild(e); }
   e.textContent=t; e.classList.add("show"); clearTimeout(tt); tt=setTimeout(function(){ e.classList.remove("show"); },3800); }
 
@@ -189,9 +207,11 @@ function injectUI(){
     try{ localStorage.clear(); sessionStorage.clear(); }catch(e){}
     (window.caches?caches.keys().then(function(k){ return Promise.all(k.map(function(x){ return caches.delete(x); })); }):Promise.resolve()).then(function(){ location.reload(); });
   };
-  document.querySelector(".status").insertAdjacentHTML("beforeend",'<button class="secondary hidden" id="ngInstall" style="padding:3px 7px;min-height:24px;font-size:10px">⬇ Встановити</button>');
+  document.querySelector(".status").insertAdjacentHTML("beforeend",'<button class="secondary" id="ngInstall" style="padding:3px 7px;min-height:24px;font-size:10px">📲 Встановити</button>');
   if(installEv) $("ngInstall").classList.remove("hidden");
-  $("ngInstall").onclick=function(){ if(!installEv) return; installEv.prompt(); installEv=null; $("ngInstall").classList.add("hidden"); };
+  $("ngInstall").onclick=installFlow;
+  $("networkTab").querySelector(".section").insertAdjacentHTML("afterbegin",'<button class="primary full" id="ngInstall2" style="margin-bottom:8px">📲 Встановити додаток</button>');
+  $("ngInstall2").onclick=installFlow;
 
   /* вишки: без автоматичних мережевих запитів */
   antennasEnabled=false; $("antennaBtn").textContent="📡 Пошук по карті: ВИМК."; $("antennaStatus").textContent="Вимкнено (без зайвих запитів). Увімкніть кнопкою вище.";
