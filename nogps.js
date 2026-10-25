@@ -6,8 +6,9 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorag
 var gpsBlocked=ls("terrainGpsBlocked")!=="0";          /* за замовчуванням GPS ЗАБЛОКОВАНО */
 var posSrc=null, phoneB=null, ring=null, installEv=null, tt=null;
 var manualAz=parseFloat(ls("terrainManualAz")); if(!isFinite(manualAz)) manualAz=null;
-var VERSION="1.4.0", VDATE="25.10.2026";
+var VERSION="1.4.1", VDATE="25.10.2026";
 var HISTORY=[
+ ["1.4.1","25.10.2026","Встановлення як додаток: маніфест перейменовано в manifest.json (надійніше для GitHub Pages), оновлено кеш."],
  ["1.4.0","25.10.2026","Вкладка «🚁 Дрон» перероблена: сектор на карті → порада по антені (азимут, нахил, висота) і по польоту (стійка дальність, ділянки втрати зв'язку з маркерами ⚠ та мінімальною висотою дрона)."],
  ["1.3.0","25.10.2026","Вкладка «🛩️ Дрон»: задаєте сектор — програма радить азимут, нахил і висоту антени, мінімальну висоту польоту дрона по дальностях, кількість антен."],
  ["1.2.0","25.10.2026","Швидкий A→B: поставили A і B — профіль рахується сам. Виправлено постановку «свого місця» тапом по карті. Номер та історія версій. Виправлено встановлення (унікальний id застосунку)."],
@@ -27,7 +28,7 @@ if(geo){
 
 /* ---------- 2. PWA + referrer (OSM-плитки не віддаються без Referer) ---------- */
 var m=document.querySelector('meta[name="referrer"]'); if(m) m.content="origin";
-[["manifest","manifest.webmanifest"],["apple-touch-icon","icon-192.png"]].forEach(function(a){
+[["manifest","manifest.json"],["apple-touch-icon","icon-192.png"]].forEach(function(a){
   var l=document.createElement("link"); l.rel=a[0]; l.href=a[1]; document.head.appendChild(l);
 });
 if("serviceWorker" in navigator) window.addEventListener("load",function(){ navigator.serviceWorker.register("sw.js").catch(function(){}); });
