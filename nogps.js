@@ -6,8 +6,9 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorag
 var gpsBlocked=ls("terrainGpsBlocked")!=="0";          /* за замовчуванням GPS ЗАБЛОКОВАНО */
 var posSrc=null, phoneB=null, ring=null, installEv=null, tt=null;
 var manualAz=parseFloat(ls("terrainManualAz")); if(!isFinite(manualAz)) manualAz=null;
-var VERSION="1.4.3", VDATE="25.10.2026";
+var VERSION="1.4.4", VDATE="25.10.2026";
 var HISTORY=[
+ ["1.4.4","25.10.2026","Розширена перевірка установки: браузер, HTTPS, наявність іконок."],
  ["1.4.3","25.10.2026","Оновлення без застарілого кешу (service worker бере файли застосунку з мережі напряму) і кнопка «🔄 Оновити застосунок» у вкладці «Мережа»."],
  ["1.4.2","25.10.2026","Кнопка «📲 Встановити» (вгорі й у вкладці «Мережа»): викликає установку або показує інструкцію та перевірку маніфесту."],
  ["1.4.1","25.10.2026","Встановлення як додаток: маніфест перейменовано в manifest.json (надійніше для GitHub Pages), оновлено кеш."],
@@ -52,12 +53,17 @@ async function installFlow(){
   if(installEv){ var ev=installEv; installEv=null; ev.prompt(); return; }
   if((window.matchMedia&&matchMedia("(display-mode: standalone)").matches)||navigator.standalone){ toast("Це вже встановлений додаток."); return; }
   var ios=/iphone|ipad|ipod/i.test(navigator.userAgent), chk=[];
-  try{ var r=await fetch("manifest.json",{cache:"no-store"}); chk.push("маніфест: "+(r.ok?"✅":"❌ помилка "+r.status)); }catch(e){ chk.push("маніфест: ❌ недоступний"); }
+  var ua=navigator.userAgent, br=/Edg\//.test(ua)?"Edge":/OPR\/|Opera/.test(ua)?"Opera":/SamsungBrowser/.test(ua)?"Samsung Internet":/Firefox|FxiOS/.test(ua)?"Firefox":/FBAN|FBAV|Instagram|Telegram|Viber|Line\//.test(ua)?"вбудований браузер (не Chrome!)":/CriOS/.test(ua)?"Chrome на iOS (використайте Safari)":/Chrome\//.test(ua)?"Chrome":"інший";
+  chk.push("браузер: "+br); chk.push("HTTPS: "+(window.isSecureContext?"✅":"❌"));
+  try{
+    var r=await fetch("manifest.json",{cache:"no-store"}); chk.push("маніфест: "+(r.ok?"✅":"❌ помилка "+r.status));
+    if(r.ok){ var mj=await r.json(); for(var ic of (mj.icons||[]).slice(0,2)){ try{ var ri=await fetch(ic.src,{cache:"no-store"}); chk.push(ic.sizes+": "+(ri.ok&&/image/.test(ri.headers.get("content-type")||"")?"✅":"❌ "+ri.status)); }catch(e){ chk.push(ic.sizes+": ❌"); } } }
+  }catch(e){ chk.push("маніфест: ❌ недоступний"); }
   try{ var g=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); chk.push("службовий скрипт: "+(g?"✅":"❌ не зареєстровано")); }catch(e){ chk.push("службовий скрипт: ❌"); }
   helpBox('<b>📲 Встановлення додатка</b><br><br>'+
     (ios?'iPhone/iPad: відкрийте сайт у <b>Safari</b> → «Поділитись» (квадрат зі стрілкою) → <b>«На початковий екран»</b>.'
         :'Android: у <b>Chrome</b> натисніть меню <b>⋮</b> → <b>«Встановити застосунок»</b> (або «Додати на головний екран»).<br>Не працює у Telegram, Viber, Firefox — відкрийте посилання в Chrome.')+
-    '<br><br><span style="color:#8faabd">Перевірка: '+chk.join(" · ")+'<br>Chrome ще не запропонував установку сам. Зазвичай допомагає: оновити сторінку, закрити вкладку й відкрити знову (потрібен інтернет).</span>');
+    '<br><br><span style="color:#8faabd">Перевірка:<br>'+chk.join("<br>")+'<br>Chrome ще не запропонував установку сам. Зазвичай допомагає: оновити сторінку, закрити вкладку й відкрити знову (потрібен інтернет).</span>');
 }
 function toast(t){ var e=$("ngToast"); if(!e){ e=document.createElement("div"); e.id="ngToast"; e.className="toast"; document.body.appendChild(e); }
   e.textContent=t; e.classList.add("show"); clearTimeout(tt); tt=setTimeout(function(){ e.classList.remove("show"); },3800); }
