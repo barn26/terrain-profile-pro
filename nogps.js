@@ -6,6 +6,13 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorag
 var gpsBlocked=ls("terrainGpsBlocked")!=="0";          /* за замовчуванням GPS ЗАБЛОКОВАНО */
 var posSrc=null, phoneB=null, ring=null, installEv=null, tt=null;
 var manualAz=parseFloat(ls("terrainManualAz")); if(!isFinite(manualAz)) manualAz=null;
+var VERSION="1.2.0", VDATE="25.10.2026";
+var HISTORY=[
+ ["1.2.0","25.10.2026","Швидкий A→B: поставили A і B — профіль рахується сам. Виправлено постановку «свого місця» тапом по карті. Номер та історія версій. Виправлено встановлення (унікальний id застосунку)."],
+ ["1.1.0","25.10.2026","Режим без GPS (GPS заблоковано за замовчуванням), ручне місце / азимут / радіус, PWA з офлайн-кешем карт, виправлення компаса, скану 360° і шару рельєфу."],
+ ["1.0.0","до 25.10.2026","Базова версія: профіль рельєфу, LOS/Френель, антени BozzLife, скан 360°, далекомір."]
+];
+var abT=null;
 var HS="https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}";
 
 /* ---------- 1. Жорстка блокада геолокації (до будь-якого коду сторінки) ---------- */
@@ -64,6 +71,20 @@ function ringUpdate(){
   updateDirectionGraphic();
 }
 
+function abInfo(){
+  var e=$("ngABinfo"); if(!e) return;
+  if(pointA&&pointB){
+    var d=getDistance(pointA.lat,pointA.lon,pointB.lat,pointB.lon), b=getBearing(pointA.lat,pointA.lon,pointB.lat,pointB.lon);
+    e.textContent="A→B: "+formatDistance(d)+" · азимут "+b.toFixed(1)+"° ("+Math.round(b*6000/360)+" т). Розраховую профіль…";
+  }else e.textContent=pointA?"Задайте точку B.":(pointB?"Задайте точку A.":"Задайте A і B — профіль порахується сам.");
+}
+function qIn(k){
+  var p=parseCoords($("ng"+k+"in").value);
+  if(!p){ toast("Не розпізнано координати "+k+". Приклад: 49.1234, 31.5678"); return; }
+  setMapPoint(k,p.lat,p.lon); map.setView([p.lat,p.lon],Math.max(map.getZoom(),13));
+}
+function qCenter(k){ var c=map.getCenter(); setMapPoint(k,c.lat,c.lng); }
+
 function setPos(lat,lon,center,skipSave){
   currentLat=lat; currentLon=lon; currentAccuracy=null; currentGpsAltitude=null; posSrc="manual";
   $("lat").textContent=lat.toFixed(6); $("lon").textContent=lon.toFixed(6);
@@ -114,6 +135,23 @@ function applyBlockUI(){
 /* ---------- 3. Вбудовування інтерфейсу ---------- */
 function injectUI(){
   var sec=document.querySelector(".left .section"); /* «Моє положення» */
+  sec.insertAdjacentHTML("beforebegin",
+    '<div class="section" id="ngQuick"><h3>⚡ Швидкий розрахунок A → B</h3>'+
+    '<div class="row"><input id="ngAin" placeholder="A: координати (або тап →)"><button class="primary" id="ngAtap">🎯 A</button><button class="secondary" id="ngAc" title="Центр карти → A">⌖</button></div>'+
+    '<div class="row"><input id="ngBin" placeholder="B: координати (або тап →)"><button class="primary" id="ngBtap">🎯 B</button><button class="secondary" id="ngBc" title="Центр карти → B">⌖</button></div>'+
+    '<div class="note" id="ngABinfo"></div>'+
+    '<p class="note">🎯 — торкніться карти; ⌖ — взяти центр карти. Щойно задані обидві точки, профіль, LOS і антена рахуються самі.</p></div>');
+  ["A","B"].forEach(function(k){
+    $("ng"+k+"tap").onclick=function(){ setPointMode(k); };
+    $("ng"+k+"c").onclick=function(){ qCenter(k); };
+    $("ng"+k+"in").addEventListener("keydown",function(e){ if(e.key==="Enter") qIn(k); });
+    $("ng"+k+"in").addEventListener("change",function(){ if($("ng"+k+"in").value.trim()) qIn(k); });
+  });
+  abInfo();
+  var vb=document.querySelector(".status"); if(vb) vb.insertAdjacentHTML("afterbegin",'<div class="badge">v'+VERSION+'</div>');
+  var ft=document.querySelector("footer");
+  if(ft) ft.insertAdjacentHTML("afterbegin",'<div><b>Версія '+VERSION+'</b> · '+VDATE+'</div><details style="text-align:left;max-width:520px;margin:5px auto"><summary style="cursor:pointer;color:#8faabd">Історія версій</summary>'+
+    HISTORY.map(function(h){ return '<div style="margin-top:5px"><b>'+h[0]+'</b> · '+h[1]+'<br>'+h[2]+'</div>'; }).join("")+'</details>');
   sec.querySelector("h3").insertAdjacentHTML("afterend",
     '<div class="row"><button class="danger full" id="ngBlock"></button></div><div class="note" id="ngNote" style="margin-bottom:5px"></div>'+
     '<div class="row"><input id="ngCoords" placeholder="Координати: 49.1234, 31.5678"><button class="primary" id="ngCoordsOk">OK</button></div>'+
@@ -241,6 +279,14 @@ function overrides(){
     else directionSector.setLatLngs(sp);
   };
   window.useAB=function(){ _ua(); if(pointA&&pointB) setDirectionMode("ab"); };
+  var _smp=window.setMapPoint;
+  window.setMapPoint=function(t,la,lo){
+    _smp(t,la,lo);
+    var i=$("ng"+t+"in"); if(i) i.value=la.toFixed(6)+", "+lo.toFixed(6);
+    abInfo(); clearTimeout(abT);
+    if(pointA&&pointB) abT=setTimeout(function(){ useAB(); calculateProfile(); },80);
+    else toast("Точку "+t+" задано. Тепер задайте "+(t==="A"?"B":"A")+".");
+  };
 
   /* ручний азимут + своя дистанція підставляються у оригінальний розрахунок */
   window.calculateProfile=function(){
@@ -274,20 +320,22 @@ function overrides(){
     return out;
   };
 
-  window.initApp=function(){
-    if(map) return;
-    _init();
+  /* initApp міг бути запущений ще ДО цього скрипта (автовхід у сесії), тому не обгортаємо його, а чекаємо на карту */
+  var hooked=false, hv=setInterval(function(){
+    if(hooked){ clearInterval(hv); return; }
+    if(typeof map==="undefined"||!map) return;
+    hooked=true; clearInterval(hv);
     if(hillshadeLayer){ hillshadeLayer.setUrl(HS); hillshadeLayer.options.maxNativeZoom=16; } /* старий tiles.wmflabs.org не працює */
     map.on("click",function(e){
       if(placingPoint!=="ME"&&placingPoint!=="AZ") return;
       var ll=e.latlng; if(mapRotationDeg){ var c=correctedLatLngFromEvent(e.originalEvent); if(c) ll=c; }
       var k=placingPoint; placingPoint=null; place(k,ll);
     });
-    var s=null; try{ s=JSON.parse(ls("terrainManualPos")||"null"); }catch(x){}
-    if(s&&isFinite(s.lat)&&isFinite(s.lon)&&currentLat==null) setPos(s.lat,s.lon,true,true);
+    var sv=null; try{ sv=JSON.parse(ls("terrainManualPos")||"null"); }catch(x){}
+    if(sv&&isFinite(sv.lat)&&isFinite(sv.lon)&&currentLat==null) setPos(sv.lat,sv.lon,true,true);
     if(manualAz!=null) setAz(manualAz);
     ringUpdate();
-  };
+  },150);
 }
 
 function boot(){ injectUI(); overrides(); applyBlockUI(); }
