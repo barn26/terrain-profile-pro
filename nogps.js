@@ -6,8 +6,9 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorag
 var gpsBlocked=ls("terrainGpsBlocked")!=="0";          /* за замовчуванням GPS ЗАБЛОКОВАНО */
 var posSrc=null, phoneB=null, ring=null, installEv=null, tt=null;
 var manualAz=parseFloat(ls("terrainManualAz")); if(!isFinite(manualAz)) manualAz=null;
-var VERSION="1.4.2", VDATE="25.10.2026";
+var VERSION="1.4.3", VDATE="25.10.2026";
 var HISTORY=[
+ ["1.4.3","25.10.2026","Оновлення без застарілого кешу (service worker бере файли застосунку з мережі напряму) і кнопка «🔄 Оновити застосунок» у вкладці «Мережа»."],
  ["1.4.2","25.10.2026","Кнопка «📲 Встановити» (вгорі й у вкладці «Мережа»): викликає установку або показує інструкцію та перевірку маніфесту."],
  ["1.4.1","25.10.2026","Встановлення як додаток: маніфест перейменовано в manifest.json (надійніше для GitHub Pages), оновлено кеш."],
  ["1.4.0","25.10.2026","Вкладка «🚁 Дрон» перероблена: сектор на карті → порада по антені (азимут, нахил, висота) і по польоту (стійка дальність, ділянки втрати зв'язку з маркерами ⚠ та мінімальною висотою дрона)."],
@@ -212,6 +213,13 @@ function injectUI(){
   $("ngInstall").onclick=installFlow;
   $("networkTab").querySelector(".section").insertAdjacentHTML("afterbegin",'<button class="primary full" id="ngInstall2" style="margin-bottom:8px">📲 Встановити додаток</button>');
   $("ngInstall2").onclick=installFlow;
+  $("ngInstall2").insertAdjacentHTML("afterend",'<button class="secondary full" id="ngUpd" style="margin-bottom:8px">🔄 Оновити застосунок (скинути кеш)</button>');
+  $("ngUpd").onclick=async function(){
+    toast("Оновлюю…");
+    try{ var rg=navigator.serviceWorker&&await navigator.serviceWorker.getRegistration(); if(rg) await rg.update(); }catch(e){}
+    try{ var ks=await caches.keys(); await Promise.all(ks.filter(function(k){ return k.indexOf("shell-")===0; }).map(function(k){ return caches.delete(k); })); }catch(e){}
+    location.reload();
+  };
 
   /* вишки: без автоматичних мережевих запитів */
   antennasEnabled=false; $("antennaBtn").textContent="📡 Пошук по карті: ВИМК."; $("antennaStatus").textContent="Вимкнено (без зайвих запитів). Увімкніть кнопкою вище.";

@@ -1,5 +1,5 @@
 /* Service worker: офлайн-оболонка + кеш карт. Змінюйте VER, щоб примусово оновити кеш. */
-const VER="tpp-v5", SHELL="shell-"+VER, LIBS="libs-v1", TILES="tiles-v1", MAX_TILES=3000;
+const VER="tpp-v6", SHELL="shell-"+VER, LIBS="libs-v1", TILES="tiles-v1", MAX_TILES=3000;
 const SHELL_FILES=["./","./index.html","./nogps.js","./drone.js","./manifest.json","./icon-192.png","./icon-512.png"];
 const L="https://unpkg.com/leaflet@1.9.4/dist/";
 const LIB_FILES=[L+"leaflet.css",L+"leaflet.js",L+"images/marker-icon.png",L+"images/marker-icon-2x.png",L+"images/marker-shadow.png",L+"images/layers.png",L+"images/layers-2x.png"];
@@ -40,7 +40,7 @@ async function tile(req){
 async function netFirst(req){
   const c=await caches.open(SHELL);
   try{
-    const r=await Promise.race([fetch(req),new Promise((_,j)=>setTimeout(j,4000))]);
+    const r=await Promise.race([fetch(req.url,{cache:"no-store"}),new Promise((_,j)=>setTimeout(j,4000))]);
     if(r&&r.ok) c.put(req,r.clone());
     return r;
   }catch(e){
