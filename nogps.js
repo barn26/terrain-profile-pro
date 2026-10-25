@@ -6,8 +6,9 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorag
 var gpsBlocked=ls("terrainGpsBlocked")!=="0";          /* за замовчуванням GPS ЗАБЛОКОВАНО */
 var posSrc=null, phoneB=null, ring=null, installEv=null, tt=null;
 var manualAz=parseFloat(ls("terrainManualAz")); if(!isFinite(manualAz)) manualAz=null;
-var VERSION="1.4.4", VDATE="25.10.2026";
+var VERSION="1.5.0", VDATE="25.10.2026";
 var HISTORY=[
+ ["1.5.0","25.10.2026","Вкладка «🚁 Дрон» стала самодостатньою (місце, сектор, висоти — всередині): вердикт 🟢/🟡/🔴, радіогоризонт, зони ризику з висотою набору та «НЕ ЗАЛІТАТИ», порада по щоглі й азимуту, бічний профіль променя."],
  ["1.4.4","25.10.2026","Розширена перевірка установки: браузер, HTTPS, наявність іконок."],
  ["1.4.3","25.10.2026","Оновлення без застарілого кешу (service worker бере файли застосунку з мережі напряму) і кнопка «🔄 Оновити застосунок» у вкладці «Мережа»."],
  ["1.4.2","25.10.2026","Кнопка «📲 Встановити» (вгорі й у вкладці «Мережа»): викликає установку або показує інструкцію та перевірку маніфесту."],
@@ -86,7 +87,7 @@ function parseCoords(str){
   if(!isFinite(lat)||!isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180) return null;
   return {lat:lat,lon:lon};
 }
-window.__parseCoords=parseCoords; window.__toast=toast;
+window.__parseCoords=parseCoords; window.__toast=toast; window.__setPos=function(a,b,c,d){ setPos(a,b,c,d); };
 
 function dist(){ var i=$("ngDist"), c=i?Number(i.value):0; if(c>0) return Math.min(c,100000); return Number($("distance").value)||1000; }
 
@@ -136,14 +137,14 @@ function readAz(){
   if(bearingSource==="manual"){ currentBearing=manualAz; updateCompassUI(); ringUpdate(); }
 }
 function place(k,ll){
-  if(k==="ME"){ setPos(ll.lat,ll.lng,false); toast("Ваше місце: "+ll.lat.toFixed(5)+", "+ll.lng.toFixed(5)); return; }
+  if(k==="ME"){ setPos(ll.lat,ll.lng,false); if(window.__droneFromPos){ window.__droneFromPos=false; showTab("droneTab",document.querySelector("nav button:last-child")); } toast("Ваше місце: "+ll.lat.toFixed(5)+", "+ll.lng.toFixed(5)); return; }
   if(currentLat==null){ toast("Спочатку задайте своє місце."); return; }
   var d=getDistance(currentLat,currentLon,ll.lat,ll.lng);
   $("ngDist").value=Math.round(d);
   setAz(getBearing(currentLat,currentLon,ll.lat,ll.lng));
   setDirectionMode("manual");
   toast("Азимут "+manualAz.toFixed(1)+"° · дальність "+formatDistance(d));
-  if(window.__droneFromSec){ window.__droneFromSec=false; showTab("droneTab",document.querySelector("nav button:last-child")); }
+  if(window.__droneFromSec){ window.__droneFromSec=false; window.__droneJustSet=true; showTab("droneTab",document.querySelector("nav button:last-child")); }
 }
 function applyBlockUI(){
   var b=$("ngBlock"), n=$("ngNote"), fix=document.querySelector('button[onclick="startGPS()"]'), live=$("gpsLiveBtn");
