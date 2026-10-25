@@ -6,8 +6,10 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorag
 var gpsBlocked=ls("terrainGpsBlocked")!=="0";          /* за замовчуванням GPS ЗАБЛОКОВАНО */
 var posSrc=null, phoneB=null, ring=null, installEv=null, tt=null;
 var manualAz=parseFloat(ls("terrainManualAz")); if(!isFinite(manualAz)) manualAz=null;
-var VERSION="1.5.0", VDATE="25.10.2026";
+var VERSION="1.7.0", VDATE="25.10.2026";
 var HISTORY=[
+ ["1.7.0","25.10.2026","Профіль висоти дрона: «низький старт» (до заданої відстані — мала висота, далі плавний набір до висоти на краю радіуса)."],
+ ["1.6.0","25.10.2026","Точніший розрахунок: висоти SRTM 30 м (резерв 90 м), крок вибірки ≤100 м, промінь кожні 5°, відлік висоти дрона (над рельєфом / від точки антени), запас на дерева й будівлі, очікувана втрата в дБ. На карті: підписи азимута (° / тисячні / сторона світу), шкала по колу сектора, Пн/Сх/Пд/Зх."],
  ["1.5.0","25.10.2026","Вкладка «🚁 Дрон» стала самодостатньою (місце, сектор, висоти — всередині): вердикт 🟢/🟡/🔴, радіогоризонт, зони ризику з висотою набору та «НЕ ЗАЛІТАТИ», порада по щоглі й азимуту, бічний профіль променя."],
  ["1.4.4","25.10.2026","Розширена перевірка установки: браузер, HTTPS, наявність іконок."],
  ["1.4.3","25.10.2026","Оновлення без застарілого кешу (service worker бере файли застосунку з мережі напряму) і кнопка «🔄 Оновити застосунок» у вкладці «Мережа»."],
@@ -19,7 +21,8 @@ var HISTORY=[
  ["1.1.0","25.10.2026","Режим без GPS (GPS заблоковано за замовчуванням), ручне місце / азимут / радіус, PWA з офлайн-кешем карт, виправлення компаса, скану 360° і шару рельєфу."],
  ["1.0.0","до 25.10.2026","Базова версія: профіль рельєфу, LOS/Френель, антени BozzLife, скан 360°, далекомір."]
 ];
-var abT=null;
+var abT=null, dirLbl=null;
+var lastOT=0;
 var HS="https://server.arcgisonline.com/ArcGIS/rest/services/Elevation/World_Hillshade/MapServer/tile/{z}/{y}/{x}";
 
 /* ---------- 1. Жорстка блокада геолокації (до будь-якого коду сторінки) ---------- */
@@ -317,6 +320,9 @@ function overrides(){
     var sp=makeSector(currentLat,currentLon,currentBearing,12,d);
     if(!directionSector) directionSector=L.polygon(sp,{color:"#35d7ff",weight:1,opacity:.3,fillColor:"#35d7ff",fillOpacity:.07}).addTo(map);
     else directionSector.setLatLngs(sp);
+    var tx=Math.round(currentBearing)+"° "+bearingName(Math.round(currentBearing))+" · "+Math.round(currentBearing*6000/360)+" т";
+    var ic=L.divIcon({className:"",iconSize:[0,0],html:'<div style="transform:translate(-50%,-50%);white-space:nowrap;background:rgba(5,16,26,.88);border:1px solid #35d7ff;color:#35d7ff;border-radius:6px;padding:2px 6px;font-size:11px;font-weight:700">'+tx+'</div>'});
+    if(!dirLbl) dirLbl=L.marker([end.lat,end.lon],{icon:ic,interactive:false,keyboard:false}).addTo(map); else{ dirLbl.setLatLng([end.lat,end.lon]); dirLbl.setIcon(ic); }
   };
   window.useAB=function(){ _ua(); if(pointA&&pointB) setDirectionMode("ab"); };
   var _smp=window.setMapPoint;
@@ -378,6 +384,23 @@ function overrides(){
   },150);
 }
 
-function boot(){ injectUI(); overrides(); applyBlockUI(); var sc=document.createElement("script"); sc.src="drone.js?v="+VERSION; document.head.appendChild(sc); }
+/* точніші висоти: SRTM 30 м (OpenTopoData, ≤1 запит/с), резерв — оригінальний ланцюжок (90 м) */
+function installElevation(){
+  var _ge=window.getElevations;
+  window.getElevations=async function(points){
+    try{
+      var w=lastOT+1150-Date.now(); if(w>0) await new Promise(function(r){ setTimeout(r,w); }); lastOT=Date.now();
+      var loc=points.map(function(p){ return p.lat.toFixed(6)+","+p.lon.toFixed(6); }).join("|");
+      var r=await fetch("https://api.opentopodata.org/v1/srtm30m?locations="+encodeURIComponent(loc));
+      if(!r.ok) throw 0;
+      var j=await r.json();
+      if(j.status!=="OK"||!j.results||j.results.length!==points.length) throw 0;
+      var e=j.results.map(function(x){ return x.elevation; });
+      if(!e.every(Number.isFinite)) throw 0;
+      window.__elevSrc="SRTM 30 м"; return e;
+    }catch(x){ window.__elevSrc="90 м (резервне джерело)"; return _ge(points); }
+  };
+}
+function boot(){ installElevation(); injectUI(); overrides(); applyBlockUI(); var sc=document.createElement("script"); sc.src="drone.js?v="+VERSION; document.head.appendChild(sc); }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot); else boot();
 })();

@@ -1,5 +1,5 @@
 /* Service worker: офлайн-оболонка + кеш карт. Змінюйте VER, щоб примусово оновити кеш. */
-const VER="tpp-v8", SHELL="shell-"+VER, LIBS="libs-v1", TILES="tiles-v1", MAX_TILES=3000;
+const VER="tpp-v10", SHELL="shell-"+VER, LIBS="libs-v1", TILES="tiles-v1", MAX_TILES=3000;
 const SHELL_FILES=["./","./index.html","./nogps.js","./drone.js","./manifest.json","./icon-192.png","./icon-512.png"];
 const L="https://unpkg.com/leaflet@1.9.4/dist/";
 const LIB_FILES=[L+"leaflet.css",L+"leaflet.js",L+"images/marker-icon.png",L+"images/marker-icon-2x.png",L+"images/marker-shadow.png",L+"images/layers.png",L+"images/layers-2x.png"];
