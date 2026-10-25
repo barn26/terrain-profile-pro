@@ -6,8 +6,10 @@ function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorag
 var gpsBlocked=ls("terrainGpsBlocked")!=="0";          /* за замовчуванням GPS ЗАБЛОКОВАНО */
 var posSrc=null, phoneB=null, ring=null, installEv=null, tt=null;
 var manualAz=parseFloat(ls("terrainManualAz")); if(!isFinite(manualAz)) manualAz=null;
-var VERSION="1.2.0", VDATE="25.10.2026";
+var VERSION="1.4.0", VDATE="25.10.2026";
 var HISTORY=[
+ ["1.4.0","25.10.2026","Вкладка «🚁 Дрон» перероблена: сектор на карті → порада по антені (азимут, нахил, висота) і по польоту (стійка дальність, ділянки втрати зв'язку з маркерами ⚠ та мінімальною висотою дрона)."],
+ ["1.3.0","25.10.2026","Вкладка «🛩️ Дрон»: задаєте сектор — програма радить азимут, нахил і висоту антени, мінімальну висоту польоту дрона по дальностях, кількість антен."],
  ["1.2.0","25.10.2026","Швидкий A→B: поставили A і B — профіль рахується сам. Виправлено постановку «свого місця» тапом по карті. Номер та історія версій. Виправлено встановлення (унікальний id застосунку)."],
  ["1.1.0","25.10.2026","Режим без GPS (GPS заблоковано за замовчуванням), ручне місце / азимут / радіус, PWA з офлайн-кешем карт, виправлення компаса, скану 360° і шару рельєфу."],
  ["1.0.0","до 25.10.2026","Базова версія: профіль рельєфу, LOS/Френель, антени BozzLife, скан 360°, далекомір."]
@@ -58,7 +60,7 @@ function parseCoords(str){
   if(!isFinite(lat)||!isFinite(lon)||Math.abs(lat)>90||Math.abs(lon)>180) return null;
   return {lat:lat,lon:lon};
 }
-window.__parseCoords=parseCoords;
+window.__parseCoords=parseCoords; window.__toast=toast;
 
 function dist(){ var i=$("ngDist"), c=i?Number(i.value):0; if(c>0) return Math.min(c,100000); return Number($("distance").value)||1000; }
 
@@ -115,6 +117,7 @@ function place(k,ll){
   setAz(getBearing(currentLat,currentLon,ll.lat,ll.lng));
   setDirectionMode("manual");
   toast("Азимут "+manualAz.toFixed(1)+"° · дальність "+formatDistance(d));
+  if(window.__droneFromSec){ window.__droneFromSec=false; showTab("droneTab",document.querySelector("nav button:last-child")); }
 }
 function applyBlockUI(){
   var b=$("ngBlock"), n=$("ngNote"), fix=document.querySelector('button[onclick="startGPS()"]'), live=$("gpsLiveBtn");
@@ -191,6 +194,7 @@ function injectUI(){
 
   /* вишки: без автоматичних мережевих запитів */
   antennasEnabled=false; $("antennaBtn").textContent="📡 Пошук по карті: ВИМК."; $("antennaStatus").textContent="Вимкнено (без зайвих запитів). Увімкніть кнопкою вище.";
+  
 }
 
 /* ---------- 4. Перевизначення функцій оригіналу ---------- */
@@ -204,7 +208,7 @@ function overrides(){
 
   window.setPointMode=function(p){
     placingPoint=p;
-    toast({A:"Торкніться карти — точка A.",B:"Торкніться карти — точка B.",ME:"Торкніться карти — це буде ваше місце.",AZ:"Торкніться карти — азимут і дальність від вашого місця."}[p]||"Торкніться карти.");
+    toast({A:"Торкніться карти — точка A.",B:"Торкніться карти — точка B.",ME:"Торкніться карти — це буде ваше місце.",AZ:"Торкніться карти — азимут і дальність від вашого місця.",DR:"Торкніться карти — центр напрямку й дальність сектора дрона."}[p]||"Торкніться карти.");
     try{ showTab("mapTab",document.querySelector("nav button:nth-child(1)")); }catch(e){}
   };
 
@@ -327,7 +331,7 @@ function overrides(){
     hooked=true; clearInterval(hv);
     if(hillshadeLayer){ hillshadeLayer.setUrl(HS); hillshadeLayer.options.maxNativeZoom=16; } /* старий tiles.wmflabs.org не працює */
     map.on("click",function(e){
-      if(placingPoint!=="ME"&&placingPoint!=="AZ") return;
+      if(["ME","AZ","DR"].indexOf(placingPoint)<0) return;
       var ll=e.latlng; if(mapRotationDeg){ var c=correctedLatLngFromEvent(e.originalEvent); if(c) ll=c; }
       var k=placingPoint; placingPoint=null; place(k,ll);
     });
@@ -338,6 +342,6 @@ function overrides(){
   },150);
 }
 
-function boot(){ injectUI(); overrides(); applyBlockUI(); }
+function boot(){ injectUI(); overrides(); applyBlockUI(); var sc=document.createElement("script"); sc.src="drone.js?v="+VERSION; document.head.appendChild(sc); }
 if(document.readyState==="loading") document.addEventListener("DOMContentLoaded",boot); else boot();
 })();
